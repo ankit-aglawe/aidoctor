@@ -1,0 +1,175 @@
+"""Tests for the CLI surface via click.testing.CliRunner."""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+from click.testing import CliRunner
+
+from aidoctor.cli import main
+
+
+def _make_clean_repo(tmp_path: Path) -> Path:
+    (tmp_path / "clean.py").write_text(
+        "def add(a: int, b: int) -> int:\n    return a + b\n"
+    )
+    return tmp_path
+
+
+def _make_slop_repo(tmp_path: Path) -> Path:
+    (tmp_path / "slop.py").write_text(
+        'API_KEY = "sk-prod-1234567890abcdef"\n'
+        "from os import *\n"
+    )
+    return tmp_path
+
+
+def test_scan_clean_repo_exits_zero(tmp_path: Path) -> None:
+    runner = CliRunner()
+    repo = _make_clean_repo(tmp_path)
+    result = runner.invoke(main, ["scan", str(repo)])
+    assert result.exit_code == 0
+    assert "Score:" in result.output
+
+
+def test_scan_slop_repo_exits_zero_with_fail_on_none(tmp_path: Path) -> None:
+    runner = CliRunner()
+    repo = _make_slop_repo(tmp_path)
+    result = runner.invoke(main, ["scan", str(repo)])
+    # default --fail-on=none means exit 0 even with violations.
+    assert result.exit_code == 0
+    assert "Hardcoded Secrets" in result.output
+
+
+def test_scan_with_fail_on_error_exits_one(tmp_path: Path) -> None:
+    runner = CliRunner()
+    repo = _make_slop_repo(tmp_path)
+    result = runner.invoke(main, ["scan", str(repo), "--fail-on", "error"])
+    assert result.exit_code == 1
+
+
+def test_scan_with_fail_on_warning_exits_one(tmp_path: Path) -> None:
+    runner = CliRunner()
+    repo = _make_slop_repo(tmp_path)
+    result = runner.invoke(main, ["scan", str(repo), "--fail-on", "warning"])
+    assert result.exit_code == 1
+
+
+def test_scan_json_emits_valid_json(tmp_path: Path) -> None:
+    runner = CliRunner()
+    repo = _make_slop_repo(tmp_path)
+    result = runner.invoke(main, ["scan", str(repo), "--json"])
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    assert data["schema_version"] == 1
+    assert "score" in data
+    assert data["score"]["value"] >= 0
+    assert data["score"]["value"] <= 100
+
+
+def test_scan_explain_prints_rule_doc(tmp_path: Path) -> None:
+    runner = CliRunner()
+    result = runner.invoke(main, ["scan", "--explain", "hardcoded-api-key"])
+    assert result.exit_code == 0
+    assert "hardcoded-api-key" in result.output
+    assert "error" in result.output
+    assert "secrets" in result.output
+
+
+def test_scan_explain_unknown_rule_exits_two(tmp_path: Path) -> None:
+    runner = CliRunner()
+    result = runner.invoke(main, ["scan", "--explain", "no-such-rule"])
+    assert result.exit_code == 2
+    assert "no rule named" in result.output
+
+
+def test_scan_no_python_files_exits_two(tmp_path: Path) -> None:
+    runner = CliRunner()
+    (tmp_path / "readme.md").write_text("nothing here\n")
+    result = runner.invoke(main, ["scan", str(tmp_path)])
+    assert result.exit_code == 2
+    assert "No Python files" in result.output
+
+
+def test_skill_generic_strips_frontmatter() -> None:
+    runner = CliRunner()
+    result = runner.invoke(main, ["skill", "--format", "generic"])
+    assert result.exit_code == 0
+    assert not result.output.startswith("---")
+    assert "# aidoctor" in result.output
+
+
+def test_skill_claude_keeps_frontmatter() -> None:
+    runner = CliRunner()
+    result = runner.invoke(main, ["skill", "--format", "claude"])
+    assert result.exit_code == 0
+    assert result.output.startswith("---")
+    assert "name: aidoctor" in result.output
+
+
+def test_skill_cursor_uses_globs_frontmatter() -> None:
+    runner = CliRunner()
+    result = runner.invoke(main, ["skill", "--format", "cursor"])
+    assert result.exit_code == 0
+    assert result.output.startswith("---")
+    assert "globs:" in result.output
+    assert "'**/*.py'" in result.output
+    assert "alwaysApply: true" in result.output
+
+
+def test_skill_opencode_strips_frontmatter() -> None:
+    runner = CliRunner()
+    result = runner.invoke(main, ["skill", "--format", "opencode"])
+    assert result.exit_code == 0
+    assert not result.output.startswith("---")
+
+
+def test_skill_codex_strips_frontmatter() -> None:
+    runner = CliRunner()
+    result = runner.invoke(main, ["skill", "--format", "codex"])
+    assert result.exit_code == 0
+    assert not result.output.startswith("---")
+
+
+def test_skill_gemini_strips_frontmatter() -> None:
+    runner = CliRunner()
+    result = runner.invoke(main, ["skill", "--format", "gemini"])
+    assert result.exit_code == 0
+    assert not result.output.startswith("---")
+
+
+def test_skill_raw_keeps_template_form() -> None:
+    runner = CliRunner()
+    result = runner.invoke(main, ["skill", "--format", "raw"])
+    assert result.exit_code == 0
+    assert result.output.startswith("---")
+
+
+def test_install_dry_run_no_writes(tmp_path: Path) -> None:
+    runner = CliRunner()
+    # No agent dirs present — install should skip all.
+    result = runner.invoke(main, ["install", "--dry-run"], env={"HOME": str(tmp_path)})
+    assert result.exit_code == 0
+
+
+def test_scan_pr_bad_url_exits_three(tmp_path: Path) -> None:
+    runner = CliRunner()
+    result = runner.invoke(main, ["scan-pr", "not-a-url"])
+    assert result.exit_code == 3
+    assert "valid GitHub PR URL" in result.output
+
+
+def test_help_text_lists_all_commands() -> None:
+    runner = CliRunner()
+    result = runner.invoke(main, ["--help"])
+    assert result.exit_code == 0
+    for cmd in ("scan", "scan-pr", "install", "skill"):
+        assert cmd in result.output
+
+
+def test_version_flag() -> None:
+    runner = CliRunner()
+    result = runner.invoke(main, ["--version"])
+    assert result.exit_code == 0
+    assert "0.1.0" in result.output

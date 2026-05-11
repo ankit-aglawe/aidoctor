@@ -2,9 +2,19 @@
 
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
-from aidoctor.diff_mode import filter_diagnostics_to_diff, parse_hunks
+import pytest
+
+from aidoctor.diff_mode import (
+    GitNotAvailableError,
+    filter_diagnostics_to_diff,
+    get_changed_files,
+    get_changed_lines,
+    parse_hunks,
+)
 from aidoctor.rules import Category, Diagnostic, Severity
 
 
@@ -79,3 +89,85 @@ def test_filter_drops_diagnostics_for_unchanged_files(tmp_path: Path) -> None:
     # No entry for this file in changed_lines.
     kept = filter_diagnostics_to_diff([diag], {}, repo_root=tmp_path)
     assert kept == []
+
+
+def _mock_subprocess_run(stdout: str, returncode: int = 0, stderr: str = ""):
+    proc = MagicMock()
+    proc.stdout = stdout
+    proc.stderr = stderr
+    proc.returncode = returncode
+    return proc
+
+
+def test_get_changed_files_returns_paths() -> None:
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value = _mock_subprocess_run("a.py\nb.py\n")
+        files = get_changed_files()
+    assert files == [Path("a.py"), Path("b.py")]
+
+
+def test_get_changed_files_staged_flag() -> None:
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value = _mock_subprocess_run("c.py\n")
+        files = get_changed_files(staged=True)
+    # Verify --cached was in args.
+    args = mock_run.call_args[0][0]
+    assert "--cached" in args
+    assert files == [Path("c.py")]
+
+
+def test_get_changed_files_empty_when_clean() -> None:
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value = _mock_subprocess_run("")
+        files = get_changed_files()
+    assert files == []
+
+
+def test_get_changed_files_raises_on_not_in_repo() -> None:
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value = _mock_subprocess_run(
+            "", returncode=128, stderr="fatal: not a git repository (or any of the parent dirs)"
+        )
+        with pytest.raises(GitNotAvailableError):
+            get_changed_files()
+
+
+def test_get_changed_files_raises_when_git_missing() -> None:
+    with patch("subprocess.run") as mock_run:
+        mock_run.side_effect = FileNotFoundError("git")
+        with pytest.raises(GitNotAvailableError):
+            get_changed_files()
+
+
+def test_get_changed_lines_parses_per_file_hunks() -> None:
+    diff_output = (
+        "diff --git a.py a.py\n"
+        "index 1234..5678 100644\n"
+        "--- a.py\n"
+        "+++ a.py\n"
+        "@@ -1,0 +2 @@\n"
+        "+new_line\n"
+        "diff --git b.py b.py\n"
+        "index 1111..2222 100644\n"
+        "--- b.py\n"
+        "+++ b.py\n"
+        "@@ -10 +11,2 @@\n"
+        "-old\n"
+        "+new1\n"
+        "+new2\n"
+    )
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value = _mock_subprocess_run(diff_output)
+        result = get_changed_lines()
+    assert Path("a.py") in result
+    assert Path("b.py") in result
+    assert 2 in result[Path("a.py")]
+    assert 11 in result[Path("b.py")]
+    assert 12 in result[Path("b.py")]
+
+
+def test_get_changed_lines_empty_diff() -> None:
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value = _mock_subprocess_run("")
+        result = get_changed_lines()
+    assert result == {}
