@@ -128,6 +128,14 @@ Rules tuned for AI-generated Python. Output must pass `aidoctor scan` with zero 
 
 Every Python file you generate, edit, or refactor. **No exceptions for "small" changes, tests, or "throwaway" scripts.** Secrets, bare excepts, and stub comments leak through all three.
 
+## Iron Law
+
+```
+NO PYTHON EMITTED WITHOUT THE 5-POINT PRE-FLIGHT PASSING
+```
+
+If any of the five checks below is unclear, resolve it **before** generating code. "I'll fix it after" is the failure mode this rule exists to prevent. **Spirit over letter** — paraphrasing the pre-flight ("I'll just glance at it") is the same violation as skipping it.
+
 ## Read this BEFORE you type a single line of Python
 
 A 30-second pre-flight that prevents most violations:
@@ -142,14 +150,17 @@ If all five are clear, continue. If any is unclear, resolve it before generating
 
 ## Anti-rationalization
 
-The following internal monologues all produce violations. Recognize them and stop:
+These internal monologues all produce violations. Recognize and stop.
 
-- *"For now I'll just hardcode this and move it later"* — you won't. Use `os.environ` now.
-- *"I'll add a TODO to come back to this"* — bare `# TODO` rots. Attach a ticket (`GH-123`, `JIRA-456`, URL) or implement it now.
-- *"This is just a test/example/script, the rules don't apply"* — the rules apply. CI runs against tests too.
-- *"I'll wrap it in `try: except Exception:` to be safe"* — that is the opposite of safe. It hides the bug you would have fixed.
-- *"I don't know the exact type so I'll use `Any`"* — read the code, infer the type, or use a Protocol/TypeVar. `Any` is a last resort, not a default.
-- *"It's only a small block, the violation doesn't matter"* — `aidoctor scan` does not grade on size. Zero violations means zero.
+| Thought | Reality |
+|---|---|
+| "For now I'll just hardcode this and move it later" | You won't. Use `os.environ` now. |
+| "I'll add a TODO to come back to this" | Bare `# TODO` rots. Attach a ticket (`GH-123`, `JIRA-456`, URL) or implement now. |
+| "This is just a test / example / script, the rules don't apply" | The rules apply. CI runs against tests too. |
+| "I'll wrap it in `try: except Exception:` to be safe" | That's the opposite of safe. It hides the bug you'd have fixed. |
+| "I don't know the exact type so I'll use `Any`" | Read the code, infer the type, or use a `Protocol`/`TypeVar`. `Any` is a last resort. |
+| "It's only a small block, the violation doesn't matter" | `aidoctor scan` doesn't grade on size. Zero means zero. |
+| "Different words so the rule doesn't apply" | Spirit over letter. Paraphrasing the rule is the same violation. |
 
 ## When a rule genuinely can't be followed
 
