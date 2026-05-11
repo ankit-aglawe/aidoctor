@@ -169,7 +169,9 @@ def test_help_text_lists_all_commands() -> None:
 
 
 def test_version_flag() -> None:
+    from aidoctor import __version__
+
     runner = CliRunner()
     result = runner.invoke(main, ["--version"])
     assert result.exit_code == 0
-    assert "0.1.0" in result.output
+    assert __version__ in result.output

@@ -4,9 +4,12 @@
 
 > Your agent writes bad code. This catches it.
 
-A coding harness for AI agents. 7 skills + 1 CLI orchestrate AI-slop review: write-time prevention, diff review, project audit. The orchestration skills (`scan`, `simplify`, `audit`, `rules`) work on any code review task.
+**aidoctor is the coding harness for AI agents.** Two things in one:
 
-**Python rules ship today** — 25 patterns across 8 categories (bare `except`, hardcoded secrets, async/sync mismatch, dead defenses, fake type hints, stub comments, AI-slop imports, stale loops). React (via [react-doctor](https://github.com/millionco/react-doctor) lift), JS, Rust, Go rule packs are on the roadmap — each is a new SKILL alongside `python-rules`, not a new tool.
+1. **AI-slop removal in any code.** The skills (`scan`, `simplify`, `audit`, `rules`) orchestrate reviews that catch the patterns LLMs reflexively produce. Where a language-specific rule pack exists, we use it for grounded, deterministic findings. Where one doesn't, the skills fall back to LLM-only qualitative review (still useful, less specific).
+2. **Opinionated robust, production-grade, non-overengineered patterns.** The `simplify` skill spawns three reviewers (reuse / quality / efficiency) to fight over-engineering at the diff level. The `audit` skill applies a six-dimensional review (structure / deps / security / exceptions / standards / coverage) at the project level.
+
+**Python rules ship today.** 25 patterns across 8 categories: bare `except`, hardcoded secrets, async/sync mismatch, dead defenses, fake type hints, stub comments, AI-slop imports, stale loops. React (via [react-doctor](https://github.com/millionco/react-doctor) lift), JS, Rust, Go rule packs are on the roadmap — each is a new SKILL alongside `python-rules`, not a new tool.
 
 Same harness, every major agent: Claude Code, Cursor, Codex, Gemini CLI, OpenCode.
 

@@ -19,6 +19,14 @@ allowed-tools: Bash(git diff*), Bash(git status*), Bash(aidoctor *), Read, Edit,
 
 A three-angle review of recently-changed Python code, then a fix pass. Modeled after the gstack `autoplan` reviewer pipeline but parallel (three independent angles) instead of sequential (gstack chains CEO → Design → Eng → DX, but we have three independent lenses on the same diff).
 
+## Language scope
+
+`simplify` works on **any code**. The three-reviewer framework (reuse / quality / efficiency) is language-agnostic.
+
+When the diff includes Python, additionally invoke `aidoctor scan` on the changed files for deterministic rule-grounded findings (current rule pack: Python). When the diff is in a language without an aidoctor rule pack (JS, Rust, Go, etc.), skip the scan step and rely on the three reviewers' qualitative review alone. Note this in your Phase 5 summary: *"LLM-only review (no rule pack for &lt;language&gt; yet)."*
+
+This fallback is the design: rules-where-available, LLM-where-not.
+
 ## Iron Law
 
 ```

@@ -20,6 +20,14 @@ allowed-tools: Bash(aidoctor *), Bash(git *), Bash(find *), Bash(grep *), Bash(w
 
 A whole-project review across six dimensions. Designed for "is this codebase production-ready?" or "audit this repo before we ship". Different scope from `simplify` (which reviews a diff) — `audit` reviews the project AT REST, regardless of what was last changed.
 
+## Language scope
+
+`audit` works on **any code project**. The six dimensions (structure / deps / security / exceptions / standards / coverage) are language-agnostic.
+
+Dimension 5 (Code Standards, rule-level) requires a language-specific rule pack. Currently: Python only via `aidoctor scan`. For a non-Python project, skip Dimension 5's deterministic phase and mark it as *"LLM-only standards review (no rule pack for &lt;language&gt; yet — falling back to general code review patterns)."* The other 5 dimensions still run normally.
+
+This fallback is the design: rules-where-available, LLM-where-not. New language rule packs ship as additional SKILLs alongside `python-rules`.
+
 ## Iron Law
 
 ```
