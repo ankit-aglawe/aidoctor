@@ -23,7 +23,7 @@ Enter
 Show
 
 Sleep 800ms
-Type "# Your agent writes bad Python. This catches it."
+Type "# Better Python from your AI assistant."
 Sleep 1s
 Enter
 

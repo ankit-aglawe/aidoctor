@@ -29,7 +29,7 @@ def _capture(callable_) -> str:
 def test_banner_includes_brand_name() -> None:
     text = _capture(render_banner)
     # ANSI-shadow blocks render as filled chars; check the tagline is present.
-    assert "Catch AI Python slop" in text
+    assert "Better Python from your AI" in text
 
 
 def test_score_color_great() -> None:
@@ -104,7 +104,7 @@ def test_render_terminal_includes_diagnostics() -> None:
     score = compute_score(result.diagnostics)
     output = _capture(lambda c: render_terminal(result, score, console=c))
     # Banner tagline always renders cleanly; the ASCII block art may not.
-    assert "Catch AI Python slop" in output
+    assert "Better Python from your AI" in output
     assert "Score:" in output
     assert "Hardcoded Secrets" in output
     assert "hardcoded-api-key" in output

@@ -29,9 +29,9 @@ from aidoctor.scan import ScanResult
 BRAND_COLOR = "bright_cyan"
 BRAND_DIM = "cyan"
 
-# Two-tone brand mark: "AI" in magenta (AI/tech), "DOCTOR" in cyan (medical).
-AI_COLOR = "bright_magenta"
-AI_DIM = "magenta"
+# Single-color brand mark. "Ownable" brand identity like Claude's amber.
+AI_COLOR = "bright_cyan"
+AI_DIM = "cyan"
 DOCTOR_COLOR = "bright_cyan"
 DOCTOR_DIM = "cyan"
 
@@ -96,7 +96,7 @@ def score_bar(score: Score, width: int = 50) -> Text:
 
 
 def render_banner(console: Console) -> None:
-    """Render the two-tone AI Doctor brand banner. Magenta AI + cyan DOCTOR."""
+    """Render the AI Doctor brand banner — mono cyan, ANSI Shadow blocks."""
     banner = Text()
     banner.append("\n")
     banner.append(BANNER_AI, style=f"bold {AI_COLOR}")
@@ -105,7 +105,7 @@ def render_banner(console: Console) -> None:
     banner.append("\n\n  ")
     banner.append(f"v{__version__}", style=DOCTOR_DIM)
     banner.append("  ·  ", style="dim")
-    banner.append("Catch AI Python slop before it ships.", style=DOCTOR_DIM)
+    banner.append("Better Python from your AI assistant.", style=DOCTOR_DIM)
     console.print(
         Panel(
             banner,
