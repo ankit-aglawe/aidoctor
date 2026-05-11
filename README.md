@@ -1,5 +1,3 @@
-# aidoctor
-
 <p align="center">
   <img src="docs/banner.svg" alt="aidoctor" width="660" />
 </p>
@@ -12,7 +10,7 @@ A static analyzer for AI-generated Python code. Catches 25 patterns Claude Code,
 <summary><strong>See it in action</strong> (click to expand a full scan)</summary>
 
 <p align="center">
-  <img src="docs/demo.svg" alt="aidoctor scan demo" />
+  <img src="docs/demo.gif" alt="aidoctor scan demo" />
 </p>
 
 </details>
@@ -23,6 +21,14 @@ A static analyzer for AI-generated Python code. Catches 25 patterns Claude Code,
 
 Install differs by harness. If you use more than one, install aidoctor separately for each.
 
+> **Pre-PyPI note:** aidoctor v0.1.0 isn't on PyPI yet. Until it is, replace every `uvx aidoctor` and `pip install aidoctor` below with the git-source form:
+>
+> - `uvx --from git+https://github.com/ankit-aglawe/aidoctor aidoctor <args>`
+> - `uv tool install git+https://github.com/ankit-aglawe/aidoctor`
+> - `pip install git+https://github.com/ankit-aglawe/aidoctor`
+>
+> The Claude Code plugin install below works today regardless — it pulls straight from this repo.
+
 ### Claude Code
 
 Register the marketplace and install the plugin:
@@ -32,13 +38,13 @@ Register the marketplace and install the plugin:
 /plugin install aidoctor@ankit-aglawe
 ```
 
-After install, just talk to Claude in plain English. Three skills auto-load when relevant:
+After install, just talk to Claude in plain English. Three skills auto-load:
 
-- **scan** — "scan this", "lint my Python", "what's the slop score?" → runs aidoctor, summarizes the top findings, asks before fixing.
-- **simplify** — "simplify what I just changed", "review this diff", "is this over-engineered?" → spawns three parallel reviewers (reuse / quality / efficiency), aggregates, fixes.
-- **python-rules** — auto-loads whenever you're writing or editing Python, so your agent reads the 25 rules before generating code (most violations never get written).
+- **scan** — runs aidoctor, summarizes the top findings, asks before fixing
+- **simplify** — three-angle review (reuse / quality / efficiency), then fixes
+- **python-rules** — auto-loads when you write Python; your agent reads the 25 rules first
 
-The slash forms `/aidoctor:scan` and `/aidoctor:simplify` work too, if you prefer typing commands over describing intent.
+Slash forms `/aidoctor:scan` and `/aidoctor:simplify` work too.
 
 ### Cursor
 
@@ -93,14 +99,18 @@ Or paste this prompt into the agent:
 
 ## CLI
 
-For humans and CI:
+For humans and CI. Until aidoctor is published on PyPI, install from git:
 
 ```bash
-uvx aidoctor scan .             # zero-install
-uv tool install aidoctor        # persistent (2026-native)
-pipx install aidoctor           # isolated
-pip install aidoctor            # classic / CI
+# zero-install one-shot (works today, pre-PyPI)
+uvx --from git+https://github.com/ankit-aglawe/aidoctor aidoctor scan .
+
+# persistent install from git
+uv tool install git+https://github.com/ankit-aglawe/aidoctor
+pipx install git+https://github.com/ankit-aglawe/aidoctor
 ```
+
+Once we publish to PyPI (next release), these shorten to `uvx aidoctor scan .` / `uv tool install aidoctor` / `pip install aidoctor`.
 
 Then:
 
