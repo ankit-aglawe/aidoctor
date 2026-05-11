@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
   "name": "ankit-aglawe",
-  "description": "Plugins by @ankit-aglawe — including aidoctor, a coding harness for AI agents writing Python.",
+  "description": "Plugins by @ankit-aglawe — including AIDoctor, the multi-language coding harness for AI agents.",
   "owner": {
     "name": "Ankit Aglawe",
     "email": "aglawe.ankit@gmail.com"
@@ -10,12 +10,12 @@
     {
       "name": "aidoctor",
       "source": "./",
-      "description": "Multi-language coding harness for AI agents. v1.0 ships Python (25 rules) + React (19 rules) deep packs + LLM-only fallback for any other language. JS / Rust / Go on the roadmap.",
+      "description": "AIDoctor — the multi-language coding harness for AI agents. v1.1 ships deep rule packs for Python (25), React (19), Rust (22), JS/TS (21), and Go (20). 107 rules, 5 languages. LLM-only fallback for any other language.",
       "homepage": "https://github.com/ankit-aglawe/aidoctor",
       "repository": "https://github.com/ankit-aglawe/aidoctor",
       "license": "MIT",
       "category": "code-quality",
-      "tags": ["python", "linter", "static-analysis", "ai-slop", "code-review", "code-quality"]
+      "tags": ["python", "react", "rust", "javascript", "typescript", "go", "linter", "static-analysis", "ai-slop", "code-review", "code-quality"]
     }
   ]
 }

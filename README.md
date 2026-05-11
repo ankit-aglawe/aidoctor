@@ -4,18 +4,12 @@
 
 > Your agent writes bad code. This catches it.
 
-**aidoctor is the multi-language coding harness for AI agents.** Two things in one:
+**AIDoctor is the multi-language coding harness for AI agents.** Two things in one:
 
-1. **AI-slop removal in any code.** Orchestration skills (`scan`, `simplify`, `audit`, `rules`) catch the patterns LLMs reflexively produce. Where a language-specific rule pack exists, the agent uses it for grounded, deterministic findings. Where one doesn't, the skills fall back to LLM-only qualitative review (still useful, just less specific).
-2. **Opinionated robust, production-grade, non-overengineered patterns.** `simplify` spawns three reviewers (reuse / quality / efficiency) to fight over-engineering at the diff level. `audit` applies a six-dimensional review (structure / deps / security / exceptions / standards / coverage) at the project level.
+1. **AI-slop removal across any code.** Orchestration skills (`scan`, `simplify`, `audit`, `rules`) catch the patterns LLMs reflexively produce — bare `except`, missing cleanup, stale closures, hardcoded secrets, `.unwrap()` in production Rust, `data, _ := ` in Go, `as User` casts in TypeScript, and dozens more. Five language rule packs (**Python, React, Rust, JS/TS, Go — 107 rules**) ground the review in real syntax; the harness reviews qualitatively wherever specifics aren't loaded.
+2. **Opinionated robust, production-grade, non-overengineered patterns.** `simplify` spawns three parallel reviewers (reuse / quality / efficiency) to fight over-engineering at the diff level. `audit` applies a six-dimensional review (structure / deps / security / exceptions / standards / coverage) at the project level. Same decision-brief format gstack users already trust.
 
-**v1.0 ships deep rule packs for Python and React.**
-- **Python (`python-rules`)** — 25 rules across 8 categories: bare `except`, hardcoded secrets, async/sync mismatch, dead defenses, fake type hints, stub comments, AI-slop imports, stale loops. Validated in iteration-1 (avg score 96→100, 3/5 evals improved).
-- **React (`react-rules`)** — 19 rules across 6 categories: state & effects, performance, architecture, security, accessibility, dead code. Lifted from [react-doctor](https://github.com/millionco/react-doctor) (MIT). Validated in iteration-4 (5/5 evals improved, 8 violations → 0).
-
-**JS / Rust / Go rule packs on the roadmap** — each is a new SKILL alongside the existing ones, validated through the same iteration methodology.
-
-Same harness, every major agent: **Claude Code, Cursor, Codex, Gemini CLI, OpenCode.**
+Works across **Claude Code, Cursor, Codex, Gemini CLI, OpenCode.** Same skill catalog, every major agent.
 
 [Install](#install) · [CLI](#cli) · [Rules](#what-it-catches) · [Leaderboard](#leaderboard) · [vs alternatives](#how-it-differs)
 
@@ -32,21 +26,24 @@ Register the marketplace and install the plugin:
 /plugin install aidoctor@ankit-aglawe
 ```
 
-After install, just talk to Claude in plain English. Eight skills load:
+After install, just talk to Claude in plain English. Eleven skills load:
 
 | You want to | Invoke | Or say |
 |---|---|---|
 | **Write** Python (no action needed) | `python-rules` auto-loads | n/a |
 | **Write** React (no action needed) | `react-rules` auto-loads | n/a |
+| **Write** Rust (no action needed) | `rust-rules` auto-loads | n/a |
+| **Write** JS/TS (no action needed) | `js-rules` auto-loads | n/a |
+| **Write** Go (no action needed) | `go-rules` auto-loads | n/a |
 | **Lint** one file or path | `/aidoctor:scan` | "scan this", "lint my code" |
 | **Review** your last diff | `/aidoctor:simplify` | "review what I just changed" |
 | **Audit** the whole repo | `/aidoctor:audit` | "audit this repo", "is it prod-ready?" |
-| **Browse** the rule catalog | `/aidoctor:rules` | "list aidoctor rules" |
-| **Get oriented** | `/aidoctor:help` | "how do I use aidoctor?" |
+| **Browse** the rule catalog | `/aidoctor:rules` | "list AIDoctor rules" |
+| **Get oriented** | `/aidoctor:help` | "how do I use AIDoctor?" |
 
 Lost? Type `/aidoctor:help` for the full decision tree.
 
-For languages without a rule pack (Rust, Go, Java, etc.), the orchestration skills (`scan`, `simplify`, `audit`) fall back to LLM-only review — still useful, just less language-specific.
+For languages without a rule pack (Java, Kotlin, C#, Ruby, PHP, Swift, etc.), the orchestration skills (`scan`, `simplify`, `audit`) fall back to LLM-only review — still useful, just less language-specific.
 
 ### Cursor
 
@@ -235,10 +232,11 @@ Want your project listed? [Open a PR](https://github.com/ankit-aglawe/aidoctor/p
 
 - [x] Claude Code plugin via `/plugin marketplace add ankit-aglawe/aidoctor` (v0.1+)
 - [x] 7-skill catalog: scan, simplify, audit, rules, help, using-aidoctor, python-rules (v0.2)
-- [ ] **`react-rules` SKILL pack** — lift the patterns from [react-doctor](https://github.com/millionco/react-doctor) (MIT) with attribution. v0.3 candidate, lowest-effort because the research is done
-- [ ] **`js-rules` SKILL pack** — language-level JS / TypeScript AI-slop (callback hell, var/let confusion, Promise.all misuse, this binding). v0.3 candidate
-- [ ] **`rust-rules` SKILL pack** — Rust AI-slop (unnecessary clones, Result anti-patterns, lifetime overengineering). v0.4 candidate
-- [ ] **`go-rules`, `vue-rules`, `next-rules`, etc.** — family pattern. Each language/framework is its own rule SKILL; orchestration skills (scan / simplify / audit) stay shared
+- [x] **`react-rules` SKILL pack** — patterns lifted from [react-doctor](https://github.com/millionco/react-doctor) (MIT) with attribution (v1.0)
+- [x] **`rust-rules` SKILL pack** — 22 rules across error handling, memory, type system, performance, idioms, async (v1.1)
+- [x] **`js-rules` SKILL pack** — 21 language-level JS/TS rules across types, async, error-handling, idioms, modules (v1.1)
+- [x] **`go-rules` SKILL pack** — 20 rules across error-handling, concurrency, idioms, performance, ai-slop-specific (v1.1)
+- [ ] **`vue-rules`, `next-rules`, `java-rules`, `swift-rules`, etc.** — family pattern. Each language/framework is its own rule SKILL; orchestration skills stay shared
 - [ ] Tree-sitter backbone in CLI for multi-language deterministic scan
 - [ ] Listed on the official Anthropic plugin marketplace
 - [ ] MCP server (`aidoctor mcp`) so Cursor / Windsurf / Codex / Gemini reach the rules over a single transport

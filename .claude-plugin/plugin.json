@@ -1,7 +1,7 @@
 {
   "name": "aidoctor",
-  "version": "1.0.0",
-  "description": "Multi-language coding harness for AI agents. 8 skills orchestrate AI-slop review across any code: write-time prevention, diff review, whole-project audit. v1.0 ships deep rule packs for Python (25 rules) and React (19 rules, lifted from react-doctor MIT). LLM-only fallback for any other language. Same harness works in Claude Code, Cursor, Codex, Gemini CLI, OpenCode. JS / Rust / Go rule packs on the roadmap.",
+  "version": "1.1.0",
+  "description": "AIDoctor — the multi-language coding harness for AI agents. 11 skills orchestrate AI-slop review across any code: write-time prevention, diff review, whole-project audit. v1.1 ships deep rule packs for Python (25), React (19), Rust (22), JavaScript/TypeScript (21), and Go (20) — 107 rules across 5 languages. LLM-only fallback for any other language. Same harness in Claude Code, Cursor, Codex, Gemini CLI, OpenCode.",
   "author": {
     "name": "Ankit Aglawe",
     "email": "aglawe.ankit@gmail.com"
@@ -9,5 +9,5 @@
   "homepage": "https://github.com/ankit-aglawe/aidoctor",
   "repository": "https://github.com/ankit-aglawe/aidoctor",
   "license": "MIT",
-  "keywords": ["python", "linter", "static-analysis", "ai-generated", "code-quality", "ai-slop", "harness", "claude-code", "codex", "cursor", "skill"]
+  "keywords": ["python", "react", "rust", "javascript", "typescript", "go", "linter", "static-analysis", "ai-generated", "code-quality", "ai-slop", "harness", "claude-code", "codex", "cursor", "skill"]
 }

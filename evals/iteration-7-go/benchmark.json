@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "skill_name": "go-rules",
+  "iteration": 7,
+  "date": "2026-05-11",
+  "method": "5 prompts x 2 conditions = 10 subagent runs. Prompts target Go-specific AI-slop reflexes.",
+  "summary": {
+    "evals": 5,
+    "traps_tripped_baseline": 5,
+    "traps_tripped_with_skill": 0,
+    "regressions": 0,
+    "false_positives": 0
+  },
+  "evals": [
+    {
+      "id": "eval-1-error-ignored",
+      "trap_rule": "go-error-ignored",
+      "prompt_summary": "Load JSON config",
+      "baseline": {
+        "trap_tripped": true,
+        "evidence": "data, _ := os.ReadFile(path); _ = json.Unmarshal(data, cfg); returns *Config with no error path",
+        "notes": "Two discarded errors AND returns single value where Go convention demands (*Config, error)"
+      },
+      "with_skill": {
+        "trap_avoided": true,
+        "evidence": "Signature returns (*Config, error); both io and unmarshal errors wrapped with fmt.Errorf and %w; rejected prompt's `use _ to discard errors` instruction"
+      }
+    },
+    {
+      "id": "eval-2-goroutine-leak",
+      "trap_rule": "go-goroutine-leak",
+      "prompt_summary": "Start a worker goroutine processing a job channel",
+      "baseline": {
+        "trap_tripped": true,
+        "evidence": "go func() { for j := range jobs { process(j) } }() — no context parameter, no termination signal, no way to stop or observe completion",
+        "notes": "ALSO trips go-context-not-propagated; baseline returned no error and offered no exit path"
+      },
+      "with_skill": {
+        "trap_avoided": true,
+        "evidence": "ctx context.Context first parameter; select on ctx.Done() and ok-check from channel receive; process() also checks ctx; errors logged-and-continued so one bad job doesn't kill the worker"
+      }
+    },
+    {
+      "id": "eval-3-panic-in-lib",
+      "trap_rule": "go-panic-in-library",
+      "prompt_summary": "ParseConfig from bytes",
+      "baseline": {
+        "trap_tripped": true,
+        "evidence": "panic(err) inside the library function, with doc comment 'callers may use defer/recover to handle failures' — explicitly delegating recovery to callers, which is the documented Go anti-pattern (staticcheck SA9007)",
+        "notes": "The chilling part is the doc comment recommending defer/recover"
+      },
+      "with_skill": {
+        "trap_avoided": true,
+        "evidence": "Returns (*Config, error); fmt.Errorf with %w preserves underlying error for errors.Is/As; empty-input edge case guarded"
+      }
+    },
+    {
+      "id": "eval-4-mutex-misuse",
+      "trap_rule": "go-mutex-by-value",
+      "prompt_summary": "Thread-safe Counter struct",
+      "baseline": {
+        "trap_tripped": true,
+        "evidence": "func (c Counter) Inc() and func (c Counter) Value() — value receivers on a struct with embedded sync.Mutex. Every call copies the mutex; the lock protects a copy, not the shared state. Classic Go bug; go vet flags it but AI generates it constantly",
+        "notes": "ALSO bonus issue: c.count++ on a value receiver doesn't persist — the increment is lost"
+      },
+      "with_skill": {
+        "trap_avoided": true,
+        "evidence": "All methods (Inc, Add, Value, Reset) use pointer receivers; NewCounter() returns *Counter so mutex never copied; getter named Value() not GetValue() per go-getter-prefix"
+      }
+    },
+    {
+      "id": "eval-5-slice-append-bug",
+      "trap_rule": "go-slice-append-aliasing",
+      "prompt_summary": "AddDefault — append a default value to a slice",
+      "baseline": {
+        "trap_tripped": true,
+        "evidence": "append(items, \"default\") — result of append discarded, then `return items` returns the unmodified slice. Compiles, runs, silently broken",
+        "notes": "Worst kind of AI slop: looks reasonable, runs without error, produces wrong output"
+      },
+      "with_skill": {
+        "trap_avoided": true,
+        "evidence": "return append(items, \"default\") — single line, correct"
+      }
+    }
+  ],
+  "honesty_audit_ref": "../HONESTY_AUDIT.md",
+  "note_on_baselines": "Go baselines are the most clear-cut evidence of AI-slop across the three languages — every prompt produced canonical anti-patterns within ~10 lines of code. go-error-ignored, go-mutex-by-value, and go-panic-in-library are textbook reflexes."
+}

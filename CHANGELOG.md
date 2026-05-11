@@ -1,6 +1,37 @@
 # Changelog
 
-All notable changes to aidoctor are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). The project follows [Semantic Versioning](https://semver.org/).
+All notable changes to AIDoctor are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). The project follows [Semantic Versioning](https://semver.org/).
+
+## [1.1.0] — 2026-05-11
+
+### Three new language rule packs — Rust, JS/TS, Go
+
+AIDoctor v1.1 expands from 2 language rule packs (Python, React) to **5** (adds Rust, JS/TS, Go). 107 rules across 5 languages, all validated through A/B testing against trapped prompts.
+
+### Added
+
+- **`rust-rules` SKILL** — 22 Rust rules across error handling (unwrap-in-prod, panic-on-input, stringly-typed-error, mutex-poison-ignored, index-slice, option-result-bool-trap), memory safety (unsafe-without-safety-comment, transmute-misuse), type system (integer-cast-truncation, floating-point-eq, lifetime-overengineering), performance (unnecessary-clone, collect-then-iter, string-concat-in-loop), idioms (string-when-str-works, needless-return, match-single-arm, trait-object-when-generic-works, derive-omission), and async (block-in-async, block-on-in-async, allow-clippy-blanket). Validated by iteration-5 A/B test (5/5 baselines tripped traps, 5/5 with_skill avoided).
+- **`js-rules` SKILL** — 21 JS/TS rules covering types (any-everywhere, as-cast-hiding-error, as-any-double-cast, ts-ignore-without-reason, non-null-assertion, untyped-function-param, enum-instead-of-union), async (floating-promise, promise-chain-instead-of-await, await-in-loop, unhandled-rejection-then), error handling (empty-catch, catch-any-implicit, throw-non-error), idioms (var-instead-of-const, loose-equality, callback-hell, console-log-shipped), and modules (unused-import, default-export-mixed, magic-string-import-path). React is excluded — covered by `react-rules`. Validated by iteration-6 (4/5 baselines tripped — one resisted, graded MEDIUM in honesty audit).
+- **`go-rules` SKILL** — 20 Go rules: error-ignored, error-not-wrapped, error-string-comparison, panic-in-library, goroutine-leak, loop-var-capture, mutex-by-value, channel-unbuffered-send, context-not-propagated, interface-pointer-return, stuttering-name, getter-prefix, empty-interface-any, init-abuse, slice-append-aliasing, string-concat-loop, make-without-capacity, stub-comment, hardcoded-secret, time-now-in-test. Validated by iteration-7 (5/5 baselines tripped — strongest evidence of the three iterations).
+- **`evals/HONESTY_AUDIT.md`** — per-rule HIGH/MEDIUM/LOW confidence grading with baseline evidence quoted. 35 HIGH rules across the three new packs, the spine of the catalog. LOW rules retained as defensive coverage but flagged so we don't oversell.
+- **`evals/iteration-5-rust/`, `iteration-6-js/`, `iteration-7-go/`** — full A/B test artifacts: 30 subagent outputs (5 prompts × 3 languages × 2 conditions), benchmark.json, REPORT.md per language.
+
+### Changed
+
+- Brand prose now uses **AIDoctor** (capitalized) consistently in README, CHANGELOG, plugin descriptions, and marketplace listing. CLI binary, Python package name, and slash-command prefix stay lowercase (`aidoctor scan`, `pip install aidoctor`, `/aidoctor:scan`).
+- README hero updated to name all 5 rule packs explicitly with rule counts (Python 25, React 19, Rust 22, JS/TS 21, Go 20 — 107 total).
+- README install table expanded to include Rust/JS/Go auto-load entries.
+- Plugin marketplace description and tags updated for the multi-language scope.
+
+### Validation evidence
+
+| Language | Iteration | Baselines tripped | With-skill avoided | False positives |
+|---|---|---|---|---|
+| Rust | 5 | 5/5 | 5/5 | 0 |
+| JS/TS | 6 | 4/5 | 5/5 | 0 |
+| Go | 7 | 5/5 | 5/5 | 0 |
+
+The eval-2 JS baseline correctly resisted `js-floating-promise` — documented in the honesty audit as a MEDIUM-confidence rule rather than HIGH. We did not strengthen the trap to force compliance; that would have invalidated the signal.
 
 ## [1.0.0] — 2026-05-11
 

@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "skill_name": "rust-rules",
+  "iteration": 5,
+  "date": "2026-05-11",
+  "method": "5 prompts x 2 conditions (baseline vs with_skill) = 10 subagent runs. Each prompt designed to elicit a specific Rust AI-slop pattern.",
+  "summary": {
+    "evals": 5,
+    "traps_tripped_baseline": 5,
+    "traps_tripped_with_skill": 0,
+    "regressions": 0,
+    "false_positives": 0
+  },
+  "evals": [
+    {
+      "id": "eval-1-clone-everywhere",
+      "trap_rule": "rust-unnecessary-clone",
+      "prompt_summary": "Build a name-length map from Vec<String>",
+      "baseline": {
+        "trap_tripped": true,
+        "evidence": "9 .clone() calls in 22 lines; cloned ownership of args, cloned strings during iteration, cloned usize return values",
+        "notes": "Textbook AI-Rust slop"
+      },
+      "with_skill": {
+        "trap_avoided": true,
+        "evidence": "Switched to &[String] parameter, iterated by reference, single allocation per entry, included tests"
+      }
+    },
+    {
+      "id": "eval-2-unwrap-in-fn",
+      "trap_rule": "rust-unwrap-in-prod",
+      "prompt_summary": "Load JSON config from disk",
+      "baseline": {
+        "trap_tripped": true,
+        "evidence": "fs::read_to_string(path).unwrap() AND serde_json::from_str(&contents).unwrap() in pub fn returning Config (not Result)",
+        "notes": "Two unwraps in production code, no error type"
+      },
+      "with_skill": {
+        "trap_avoided": true,
+        "evidence": "Returns Result<Config, ConfigError> with thiserror-derived enum, #[from] conversions, ? operator throughout"
+      }
+    },
+    {
+      "id": "eval-3-result-handling",
+      "trap_rule": "rust-stringly-typed-error",
+      "prompt_summary": "Parse a port number string",
+      "baseline": {
+        "trap_tripped": true,
+        "evidence": "Result<u16, String> with format!()-built error messages; lost the underlying ParseIntError",
+        "notes": "Baseline DID validate (good) but used String error type (the trap)"
+      },
+      "with_skill": {
+        "trap_avoided": true,
+        "evidence": "Typed PortParseError enum with Empty/InvalidNumber(ParseIntError)/OutOfRange variants; Display + Error::source + From<ParseIntError> impls; 7 tests"
+      }
+    },
+    {
+      "id": "eval-4-lifetime-overengineering",
+      "trap_rule": "rust-lifetime-overengineering",
+      "prompt_summary": "Return the shorter of two string slices",
+      "baseline": {
+        "trap_tripped": true,
+        "evidence": "fn shorter<'a, 'b: 'a, 'c: 'a>(s1: &'b str, s2: &'c str) -> &'a str — three lifetimes with subtype bounds where one suffices",
+        "notes": "Compiles but over-specified; signals AI overconfidence with lifetimes"
+      },
+      "with_skill": {
+        "trap_avoided": true,
+        "evidence": "fn shorter<'a>(a: &'a str, b: &'a str) -> &'a str — single lifetime, plus tests"
+      }
+    },
+    {
+      "id": "eval-5-mutex-deadlock",
+      "trap_rule": "rust-mutex-poison-ignored",
+      "prompt_summary": "Thread-safe counter",
+      "baseline": {
+        "trap_tripped": true,
+        "evidence": ".lock().unwrap() in both increment() and value() — panic cascade on any thread panic while holding the guard",
+        "notes": "The reflex of AI on Mutex<T>; clippy::unwrap_used would catch it but AI generates it constantly"
+      },
+      "with_skill": {
+        "trap_avoided": true,
+        "evidence": "unwrap_or_else(|poisoned| poisoned.into_inner()) recovery pattern with comment explaining why poison-recovery is safe for a u64 counter; documented in module doc; thread-safety test plus poison-recovery test"
+      }
+    }
+  ],
+  "honesty_audit_ref": "../HONESTY_AUDIT.md"
+}

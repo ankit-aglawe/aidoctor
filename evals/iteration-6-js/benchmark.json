@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "skill_name": "js-rules",
+  "iteration": 6,
+  "date": "2026-05-11",
+  "method": "5 prompts x 2 conditions = 10 subagent runs. Prompts target JS/TS-specific AI-slop patterns excluding React (covered by react-rules).",
+  "summary": {
+    "evals": 5,
+    "traps_tripped_baseline": 4,
+    "traps_tripped_with_skill": 0,
+    "regressions": 0,
+    "false_positives": 0,
+    "baseline_resisted_trap": 1
+  },
+  "evals": [
+    {
+      "id": "eval-1-any-everywhere",
+      "trap_rule": "js-any-everywhere",
+      "prompt_summary": "Process webhook payload",
+      "baseline": {
+        "trap_tripped": true,
+        "evidence": "5 `any` annotations in 9 lines — payload: any, return : any, event_type/user_id/data each typed any",
+        "notes": "Textbook AI-TS reflex"
+      },
+      "with_skill": {
+        "trap_avoided": true,
+        "evidence": "payload: unknown, type guards (isWebhookEventType, isPlainObject), typed InvalidWebhookPayloadError, ReadonlySet for event_type union, explicit narrowing at every property access"
+      }
+    },
+    {
+      "id": "eval-2-missing-await",
+      "trap_rule": "js-floating-promise",
+      "prompt_summary": "Express handler with audit-log side effect",
+      "baseline": {
+        "trap_tripped": false,
+        "evidence": "Baseline correctly used `.catch()` on the fire-and-forget audit save and `await`ed the business logic. Modern AI behavior on this prompt is more sophisticated than the rule assumes.",
+        "notes": "Trap sidestepped. Real signal: js-floating-promise is MEDIUM-confidence as AI-reflex, not HIGH."
+      },
+      "with_skill": {
+        "trap_avoided": true,
+        "evidence": "Used `void saveAudit(...).catch(...)` (explicit void of the floating promise, which is the documented-correct pattern), typed Record<string, unknown> for metadata, narrowed catch with err: unknown + instanceof Error"
+      }
+    },
+    {
+      "id": "eval-3-callback-hell",
+      "trap_rule": "js-callback-hell",
+      "prompt_summary": "Read three files, concat, write output (Node)",
+      "baseline": {
+        "trap_tripped": true,
+        "evidence": "4-level nested fs.readFile pyramid with 4 separate error branches",
+        "notes": "Classic when prompt phrasing nudges toward Node callback APIs"
+      },
+      "with_skill": {
+        "trap_avoided": true,
+        "evidence": "node:fs/promises + Promise.all for parallel reads + top-level await pattern + single error handler with instanceof Error narrowing"
+      }
+    },
+    {
+      "id": "eval-4-untyped-promise",
+      "trap_rule": "js-untyped-function-param",
+      "prompt_summary": "fetchUser implementation",
+      "baseline": {
+        "trap_tripped": true,
+        "evidence": "fetchUser(id: string) with NO return type annotation (inferred Promise<any>); response.json() returns any; user variable untyped",
+        "notes": "AI defaults to inference for return types in TS"
+      },
+      "with_skill": {
+        "trap_avoided": true,
+        "evidence": "Explicit Promise<User> return type, zod UserSchema runtime validation, User type inferred from schema (single source of truth), FetchUserError subclass, typed unknown -> User narrowing"
+      }
+    },
+    {
+      "id": "eval-5-as-cast-hiding",
+      "trap_rule": "js-as-cast-hiding-error",
+      "prompt_summary": "Parse JSON into User type",
+      "baseline": {
+        "trap_tripped": true,
+        "evidence": "JSON.parse(rawJson) as User — zero validation, raw assertion to satisfy the type checker",
+        "notes": "The canonical TS escape hatch AI reaches for"
+      },
+      "with_skill": {
+        "trap_avoided": true,
+        "evidence": "unknown + zod safeParse, real Error rethrown on validation failure, try/catch narrowed with instanceof Error, User type derived from schema"
+      }
+    }
+  ],
+  "honesty_audit_ref": "../HONESTY_AUDIT.md",
+  "note_on_eval_2": "eval-2's baseline did NOT trip js-floating-promise — modern AI sometimes handles this correctly. The rule stays in the catalog (it's still a documented community pattern), but is graded MEDIUM in the honesty audit rather than HIGH."
+}
