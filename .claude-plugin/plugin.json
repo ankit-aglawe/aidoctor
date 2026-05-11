@@ -1,0 +1,13 @@
+{
+  "name": "aidoctor",
+  "version": "0.1.0",
+  "description": "Static analyzer for AI-generated Python. Catches bare except, hardcoded secrets, async/sync mismatch, dead defenses, fake type hints, stub comments. Installs a skill into your agent so it stops writing them.",
+  "author": {
+    "name": "Ankit Aglawe",
+    "email": "aglawe.ankit@gmail.com"
+  },
+  "homepage": "https://github.com/ankit-aglawe/aidoctor",
+  "repository": "https://github.com/ankit-aglawe/aidoctor",
+  "license": "MIT",
+  "keywords": ["python", "linter", "static-analysis", "ai-generated", "code-quality", "ai-slop"]
+}
