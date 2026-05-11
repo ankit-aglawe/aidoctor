@@ -63,7 +63,7 @@ Drop the rules file into Codex's config dir:
 uvx aidoctor install
 ```
 
-Writes `~/.codex/skills/aidoctor.md`. Codex reads it automatically when generating Python.
+Writes `~/.codex/skills/aidoctor.md`. Codex reads it automatically when generating Python, React, Rust, JS/TS, or Go.
 
 ### Gemini CLI
 
@@ -98,7 +98,9 @@ Or paste this prompt into the agent:
 
 ## CLI
 
-For humans and CI:
+> The skill harness is the primary surface as of v1.0. The CLI on PyPI is `aidoctor 0.1.0` — Python-only deterministic scan, kept for humans and CI on Python projects. Multi-language deterministic scanning (Rust, Go, JS/TS) ships in v2.0+ on a tree-sitter backbone.
+
+For humans and CI (Python projects only):
 
 ```bash
 uvx aidoctor scan .             # zero-install
@@ -121,20 +123,19 @@ No signup. No API key. No telemetry. Runs entirely on your machine.
 
 ## What it catches
 
-25 rules across 8 categories. Each rule has a stable ID (`bare-except-pass`, `hardcoded-api-key`, `range-len-loop`) that appears identically in scan output, the skill markdown, and the slash command — so an agent can cite a finding back to you and you can cite a finding back to the agent.
+**107 rules across 5 languages.** Each rule has a stable ID (`bare-except-pass`, `rust-unwrap-in-prod`, `go-error-ignored`, `js-any-everywhere`, `react-key-as-index`) that appears identically in skill markdown, scan output, and slash commands — so an agent can cite a finding back to you and you can cite one back to the agent.
 
-| Category | Rules |
-|---|---|
-| **Dead defenses** | bare `except: pass`, `except Exception` swallowing, unreachable raise after return, redundant null-check after `isinstance` |
-| **Hardcoded secrets** | API key / token literals, AWS credentials, JWT-shaped strings |
-| **Async/sync mismatch** | sync I/O in async fn, `asyncio.run` inside async fn, blocking call in event loop |
-| **Fake type hints** | `Any` everywhere, missing return type on public fn, generic without `TypeVar` |
-| **Stale loop patterns** | mutate list during iteration, `range(len(x))`, `time.sleep` in tests |
-| **Performance** | nested-loop `append`, `+=` string concat in loop, repeated dict lookup |
-| **AI-slop imports** | wildcard import, duplicate import, conditional import outside try, import without use |
-| **Comment-driven decay** | TODO/FIXME without ticket, stub comments (`# implement this`) shipped as code |
+| Language | Pack | Highlights |
+|---|---|---|
+| **Python** (25 rules) | `python-rules` | bare `except: pass`, hardcoded API keys, sync I/O in async fn, `Any` everywhere, `range(len(x))`, nested-loop append, wildcard imports, stub comments shipped as code |
+| **React** (19 rules) | `react-rules` | key-as-index, stale closures in effects, missing dependency arrays, `dangerouslySetInnerHTML` without sanitization, `useState` of derived value, prop-drilling beyond 3 levels |
+| **Rust** (22 rules) | `rust-rules` | `.unwrap()` in production fn, `.clone()` everywhere, `Result<T, String>` instead of typed error, `.lock().unwrap()` panic cascade, lifetime overengineering, blocking I/O in async |
+| **JS/TS** (21 rules) | `js-rules` | `any` everywhere, `as User` cast bypassing validation, callback hell, floating promises, empty catch, untyped function params, `@ts-ignore` without reason |
+| **Go** (20 rules) | `go-rules` | `data, _ := ` discarding errors, goroutine leak (no context), `panic` in library, value-receiver mutex, `append(items, ...)` without assign, error not wrapped with `%w` |
 
-Full rule reference: `aidoctor scan --explain <rule-id>`.
+Honesty: rules are graded HIGH/MEDIUM/LOW for AI-slop confidence in `evals/HONESTY_AUDIT.md`. The HIGH ones are the spine — proven across iter-1..7 A/B tests against trapped prompts. The LOW ones are defensive coverage.
+
+For languages without a rule pack (Java, Kotlin, C#, Ruby, PHP, Swift, etc.), the orchestration skills (`scan`, `simplify`, `audit`) fall back to LLM-only review.
 
 ## Score
 
@@ -216,15 +217,15 @@ Multiple rules: `# aidoctor: disable=rule-1,rule-2`.
 | Free CLI | ✓ | ✓ | ✓ | $24/seat/mo |
 | Per-PR scan | ✓ (`scan-pr`) | via Action | — | ✓ |
 
-Ruff is the right tool for correctness. aidoctor is the right tool for the specific failure modes LLMs have when they write Python — patterns that pass Ruff and mypy on default settings but break in production.
+Ruff / Clippy / staticcheck / typescript-eslint are the right tools for correctness. AIDoctor is the right tool for the specific failure modes LLMs have across all five supported languages — patterns that pass those linters on default settings but break in production. Same harness, five languages.
 
 ## Leaderboard
 
-How major Python projects score:
+How major open-source projects score across Python, React, Rust, JS/TS, and Go:
 
-| Repo | Score | Top issues |
-|---|---|---|
-| _coming at launch_ | — | — |
+| Repo | Language | Score | Top issues |
+|---|---|---|---|
+| _coming at launch_ | — | — | — |
 
 Want your project listed? [Open a PR](https://github.com/ankit-aglawe/aidoctor/pulls) adding it to `leaderboard.yaml`.
 
@@ -247,7 +248,7 @@ Want a language we haven't shipped yet? Upvote / open an issue. We build the nex
 
 ## Credits
 
-Inspired by [react-doctor](https://github.com/millionco/react-doctor) by [@aidenybai](https://twitter.com/aidenybai). Built for the era where most Python isn't written by humans anymore.
+Inspired by [react-doctor](https://github.com/millionco/react-doctor) by [@aidenybai](https://twitter.com/aidenybai). Built for the era where most code isn't written by humans anymore.
 
 ## License
 
