@@ -1,19 +1,10 @@
 <p align="center">
-  <img src="docs/banner.svg" alt="aidoctor" width="660" />
+  <img src="https://raw.githubusercontent.com/ankit-aglawe/aidoctor/main/docs/banner.png" alt="aidoctor" width="660" />
 </p>
 
 > Your agent writes bad Python. This catches it.
 
 A static analyzer for AI-generated Python code. Catches 25 patterns Claude Code, Cursor, Copilot, Codex, Gemini, and friends produce: bare `except`, hardcoded secrets, async/sync mismatch, dead defenses, fake type hints, stub comments shipped as production code. Then installs a skill into your agent so it stops writing them.
-
-<details>
-<summary><strong>See it in action</strong> (click to expand a full scan)</summary>
-
-<p align="center">
-  <img src="docs/demo.gif" alt="aidoctor scan demo" />
-</p>
-
-</details>
 
 [Install](#install) · [CLI](#cli) · [Rules](#what-it-catches) · [Leaderboard](#leaderboard) · [vs alternatives](#how-it-differs)
 
