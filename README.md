@@ -1,12 +1,23 @@
 # AI Doctor
 
+<p align="center">
+  <img src="docs/banner.svg" alt="AI Doctor" width="660" />
+</p>
+
 > Your agent writes bad Python. This catches it.
 
 Install command: `pip install aidoctor` · Run: `aidoctor scan .`
 
 A static analyzer for AI-generated Python code. Catches the patterns that AI coding assistants (Claude Code, Cursor, Copilot, Codex) produce: bare `except`, hardcoded secrets, async/sync mismatches, dead defenses, fake type hints, and more. Then installs a skill into your AI agent so it stops writing them in the first place.
 
-![demo](docs/demo.gif)
+<details>
+<summary><strong>See it in action</strong> (click to expand the full scan output)</summary>
+
+<p align="center">
+  <img src="docs/demo.svg" alt="aidoctor scan demo" />
+</p>
+
+</details>
 
 [Install](#install) · [Demo](#demo) · [Leaderboard](#leaderboard) · [Docs](#how-it-works)
 

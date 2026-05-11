@@ -1,51 +1,52 @@
 # vhs tape — records the aidoctor demo GIF for the README hero.
 #
-# Run with: `vhs docs/demo.tape`
-# Output:   `docs/demo.gif`
-# Install vhs: https://github.com/charmbracelet/vhs
+# Run from project root: `vhs docs/demo.tape`
+# Output:                `docs/demo.gif`
 
 Output docs/demo.gif
 
 Set Theme "Catppuccin Mocha"
 Set FontSize 16
 Set Width 1200
-Set Height 700
+Set Height 760
 Set Padding 20
 Set Framerate 30
-Set TypingSpeed 50ms
+Set TypingSpeed 60ms
+Set Shell "bash"
 
-# Open with a clean prompt
+# Activate the venv silently so the `aidoctor` command resolves.
+Hide
+Type "source .venv/bin/activate"
+Enter
+Type "clear"
+Enter
+Show
+
+Sleep 800ms
 Type "# Your agent writes bad Python. This catches it."
-Enter
 Sleep 1s
-
-Type "pip install aidoctor"
 Enter
-Sleep 2s
 
-Type "aidoctor scan ./examples/slop_app.py"
+Sleep 600ms
+Type "aidoctor scan tests/fixtures/sample_repo"
+Sleep 800ms
 Enter
-Sleep 4s
 
-# Let the doctor face linger
-Sleep 3s
+Sleep 6s
 
-# Show one of the rules in detail
 Type "aidoctor scan --explain hardcoded-api-key"
+Sleep 800ms
 Enter
+
 Sleep 4s
 
-# Show the install command
 Type "aidoctor install"
+Sleep 800ms
 Enter
+
 Sleep 3s
 
-# Show that it set up the skill in claude / cursor
-Type "ls ~/.claude/skills/aidoctor/"
+Type "# Skill installed in 5 agent dirs · /aidoctor lives in 3 of them"
+Sleep 2500ms
 Enter
 Sleep 2s
-
-# Quick rescan after fix
-Type "aidoctor scan ./examples/clean_app.py"
-Enter
-Sleep 3s

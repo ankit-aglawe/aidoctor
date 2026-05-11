@@ -9,10 +9,6 @@ from rich.console import Console
 
 from aidoctor.render import (
     CATEGORY_COLORS,
-    FACE_CRITICAL,
-    FACE_GREAT,
-    FACE_NEEDS_WORK,
-    face_for,
     render_banner,
     render_terminal,
     score_bar,
@@ -34,48 +30,6 @@ def test_banner_includes_brand_name() -> None:
     text = _capture(render_banner)
     # ANSI-shadow blocks render as filled chars; check the tagline is present.
     assert "Catch AI Python slop" in text
-
-
-def test_face_for_great() -> None:
-    score = compute_score([])  # 100, Great
-    assert face_for(score) == FACE_GREAT
-
-
-def test_face_for_critical() -> None:
-    diags = [
-        Diagnostic(
-            rule_id=f"r{i}",
-            severity=Severity.ERROR,
-            category=Category.SECRETS,
-            file=Path("/tmp/x.py"),
-            line=1,
-            column=0,
-            message="m",
-            help="h",
-        )
-        for i in range(20)
-    ]
-    score = compute_score(diags)
-    assert face_for(score) == FACE_CRITICAL
-
-
-def test_face_for_needs_work() -> None:
-    # 7 unique error rules at 4 penalty = 72 -> Needs work
-    diags = [
-        Diagnostic(
-            rule_id=f"r{i}",
-            severity=Severity.ERROR,
-            category=Category.SECRETS,
-            file=Path("/tmp/x.py"),
-            line=1,
-            column=0,
-            message="m",
-            help="h",
-        )
-        for i in range(7)
-    ]
-    score = compute_score(diags)
-    assert face_for(score) == FACE_NEEDS_WORK
 
 
 def test_score_color_great() -> None:

@@ -35,8 +35,8 @@ AI_DIM = "magenta"
 DOCTOR_COLOR = "bright_cyan"
 DOCTOR_DIM = "cyan"
 
-# ANSI Shadow style. Mirrors Claude Code's CLAUDE/CODE two-line block layout.
-BANNER_AI = r"""   █████╗ ██╗
+# ANSI Shadow style. Both lines left-aligned at the same column.
+BANNER_AI = r"""  █████╗ ██╗
   ██╔══██╗██║
   ███████║██║
   ██╔══██║██║
@@ -62,46 +62,6 @@ CATEGORY_COLORS: dict[Category, str] = {
     Category.PERF: "bright_green",
     Category.DECAY: "bright_white",
 }
-
-# Doctor faces by health tier. The screenshot moment.
-FACE_GREAT = r"""
-  _____________
- /  ___________\
-|  /  ◠   ◠   \ |
-|  |    ▽    | |
-|  \   ___   / |
- \   \_____/  /
-  \___________/
-"""
-
-FACE_NEEDS_WORK = r"""
-  _____________
- /  ___________\
-|  /  -   -   \ |
-|  |    o    | |
-|  \    _    / |
- \   \_____/  /
-  \___________/
-"""
-
-FACE_CRITICAL = r"""
-  _____________
- /  ___________\
-|  /  x   x   \ |
-|  |    ︿    | |
-|  \   ___   / |
- \   \_____/  /
-  \___________/
-"""
-
-
-def face_for(score: Score) -> str:
-    if score.label == LABEL_GREAT:
-        return FACE_GREAT
-    if score.label == LABEL_NEEDS_WORK:
-        return FACE_NEEDS_WORK
-    return FACE_CRITICAL
-
 
 def score_color(score: Score) -> str:
     if score.label == LABEL_GREAT:
@@ -164,20 +124,15 @@ def render_terminal(result: ScanResult, score: Score, console: Console | None = 
     # Brand banner first
     render_banner(console)
 
-    # Header: doctor face + score
-    face = face_for(score)
+    # Diagnosis panel: score + bar, no kitsch face.
     color = score_color(score)
     header = Text()
-    header.append(face, style=color)
-    header.append("\n")
     header.append("  Score: ", style="white")
     header.append(f"{score.value}/100", style=f"bold {color}")
-    header.append(f"  ({score.label})\n", style=color)
-    header.append("  ")
+    header.append(f"  ({score.label})\n  ", style=color)
     header.append(score_bar(score))
-    header.append("\n")
 
-    console.print(Panel(header, title="diagnosis", border_style=color, expand=False))
+    console.print(Panel(header, title="diagnosis", border_style=color, expand=False, padding=(1, 1)))
 
     # File summary
     summary = Text()
