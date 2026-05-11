@@ -23,6 +23,44 @@ def test_load_platforms() -> None:
     assert "gemini" in keys
 
 
+def test_slash_command_supported_platforms() -> None:
+    platforms = {p.key: p for p in load_platforms()}
+    # These platforms support custom slash commands.
+    assert platforms["claude"].slash_command_relative_path is not None
+    assert platforms["opencode"].slash_command_relative_path is not None
+    assert platforms["gemini"].slash_command_relative_path is not None
+    # These don't.
+    assert platforms["cursor"].slash_command_relative_path is None
+    assert platforms["codex"].slash_command_relative_path is None
+
+
+def test_install_writes_slash_command_for_claude(tmp_path: Path) -> None:
+    (tmp_path / ".claude").mkdir()
+    install_all(home=tmp_path, dry_run=False)
+    slash = tmp_path / ".claude" / "commands" / "aidoctor.md"
+    assert slash.exists()
+    content = slash.read_text()
+    assert "Scan the current directory" in content
+    assert "aidoctor scan" in content
+
+
+def test_install_writes_toml_slash_command_for_gemini(tmp_path: Path) -> None:
+    (tmp_path / ".gemini").mkdir()
+    install_all(home=tmp_path, dry_run=False)
+    slash = tmp_path / ".gemini" / "commands" / "aidoctor.toml"
+    assert slash.exists()
+    content = slash.read_text()
+    assert 'name = "aidoctor"' in content
+    assert "prompt =" in content
+
+
+def test_install_skips_slash_command_for_cursor(tmp_path: Path) -> None:
+    (tmp_path / ".cursor").mkdir()
+    install_all(home=tmp_path, dry_run=False)
+    # Cursor has no slash command convention — no commands dir should exist.
+    assert not (tmp_path / ".cursor" / "commands").exists()
+
+
 def test_platform_absolute_path(tmp_path: Path) -> None:
     p = Platform(
         key="test",

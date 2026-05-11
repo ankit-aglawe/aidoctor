@@ -39,10 +39,18 @@ class Platform:
     display_name: str
     relative_path: str
     format: str
+    slash_command_relative_path: str | None = None
+    slash_command_format: str | None = None
 
     def absolute_path(self, home: Path | None = None) -> Path:
         home = home or Path.home()
         return home / self.relative_path
+
+    def slash_command_path(self, home: Path | None = None) -> Path | None:
+        if self.slash_command_relative_path is None:
+            return None
+        home = home or Path.home()
+        return home / self.slash_command_relative_path
 
 
 @dataclass(slots=True, frozen=True)
@@ -67,9 +75,19 @@ def load_platforms() -> list[Platform]:
             display_name=v["display_name"],
             relative_path=v["path"],
             format=v["format"],
+            slash_command_relative_path=v.get("slash_command_path"),
+            slash_command_format=v.get("slash_command_format"),
         )
         for key, v in data.items()
     ]
+
+
+def load_slash_command(format: str) -> str:
+    """Return the slash command file content for the given format."""
+    skill_pkg = files("aidoctor.skill")
+    if format == "toml":
+        return (skill_pkg / "slash_command.toml").read_text(encoding="utf-8")
+    return (skill_pkg / "slash_command.md").read_text(encoding="utf-8")
 
 
 def render_skill() -> str:
@@ -188,6 +206,14 @@ def install_one(
 
     target_dir.mkdir(parents=True, exist_ok=True)
     target.write_text(rendered, encoding="utf-8")
+
+    # Also write the /aidoctor slash command file if this platform supports it.
+    slash_target = platform.slash_command_path(home)
+    if slash_target is not None and platform.slash_command_format is not None:
+        slash_content = load_slash_command(platform.slash_command_format)
+        slash_target.parent.mkdir(parents=True, exist_ok=True)
+        slash_target.write_text(slash_content, encoding="utf-8")
+
     return InstallResult(
         platform=platform,
         path=target,

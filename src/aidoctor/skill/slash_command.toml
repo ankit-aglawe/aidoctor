@@ -1,0 +1,12 @@
+name = "aidoctor"
+description = "Scan the current directory with aidoctor and explain the score."
+
+prompt = """
+Run aidoctor on the user's project. By default scan the current working directory; if the user passed a path, use that instead.
+
+1. Run `aidoctor scan {{args | default('.')}}` (if aidoctor is not on PATH, ask the user to install it via `pip install aidoctor`).
+2. Parse the score and the top violations from the output.
+3. Reply in one paragraph: the score out of 100 and label (Great / Needs work / Critical), the top 3 rule violations and what each means in plain English, whether to fix errors first or warnings first.
+4. Ask if the user wants you to fix the violations now. If yes, apply fixes file-by-file using the installed aidoctor SKILL.md rules.
+5. Do not modify any files until the user confirms.
+"""

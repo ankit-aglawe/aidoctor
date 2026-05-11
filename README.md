@@ -55,6 +55,10 @@ For any other agent (Aider, Copilot Workspace, custom): pipe the rules in.
 aidoctor skill --format generic > my-agent/rules/aidoctor.md
 ```
 
+### Use `/aidoctor` as a slash command
+
+`aidoctor install` also drops a slash command for the platforms that support it: **Claude Code, OpenCode, Gemini CLI**. After install, just type `/aidoctor` (or `/aidoctor src/`) inside the agent — it runs the scan, summarizes the score in plain English, and asks if you want it to fix the violations. Cursor and Codex don't support custom slash commands, so the rules file is the main vector there.
+
 ## What aidoctor catches
 
 | Category | Sample rules |

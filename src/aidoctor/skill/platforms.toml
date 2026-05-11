@@ -2,10 +2,16 @@
 # Each entry: filename + path under $HOME where the skill markdown lands.
 # Note: file format quirks per platform live in `template.md.j2` via Jinja2 conditionals.
 
+# Each entry installs a SKILL/rules file (the rule book the agent reads).
+# Entries with `slash_command_path` ALSO install a slash command so users can
+# invoke aidoctor directly via `/aidoctor` in that agent.
+
 [claude]
 display_name = "Claude Code"
 path = ".claude/skills/aidoctor/SKILL.md"
 format = "claude"
+slash_command_path = ".claude/commands/aidoctor.md"
+slash_command_format = "markdown"
 
 [cursor]
 display_name = "Cursor"
@@ -16,6 +22,8 @@ format = "cursor"
 display_name = "OpenCode"
 path = ".config/opencode/rules/aidoctor.md"
 format = "opencode"
+slash_command_path = ".config/opencode/commands/aidoctor.md"
+slash_command_format = "markdown"
 
 [codex]
 display_name = "Codex (OpenAI)"
@@ -26,3 +34,5 @@ format = "codex"
 display_name = "Gemini CLI"
 path = ".gemini/rules/aidoctor.md"
 format = "gemini"
+slash_command_path = ".gemini/commands/aidoctor.toml"
+slash_command_format = "toml"
