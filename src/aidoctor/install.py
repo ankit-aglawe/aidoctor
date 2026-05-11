@@ -11,6 +11,7 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import shutil
+import sys
 from dataclasses import dataclass
 from importlib.resources import files
 from pathlib import Path
@@ -38,12 +39,31 @@ class Platform:
     display_name: str
     relative_path: str
     format: str
+    agent_root_relative: str | None = None
     slash_command_relative_path: str | None = None
     slash_command_format: str | None = None
+
+    @property
+    def agent_root(self) -> str:
+        """Directory under $HOME whose presence indicates this agent is installed.
+
+        Defaults to the first segment of `relative_path` (e.g. `.claude`), but
+        platforms whose config lives under a shared dir (e.g. OpenCode at
+        `.config/opencode/`) override via the explicit `agent_root` field in
+        platforms.toml — checking `.config` alone would false-positive on
+        every Linux system.
+        """
+        if self.agent_root_relative:
+            return self.agent_root_relative
+        return Path(self.relative_path).parts[0]
 
     def absolute_path(self, home: Path | None = None) -> Path:
         home = home or Path.home()
         return home / self.relative_path
+
+    def absolute_agent_root(self, home: Path | None = None) -> Path:
+        home = home or Path.home()
+        return home / self.agent_root
 
     def slash_command_path(self, home: Path | None = None) -> Path | None:
         if self.slash_command_relative_path is None:
@@ -74,6 +94,7 @@ def load_platforms() -> list[Platform]:
             display_name=v["display_name"],
             relative_path=v["path"],
             format=v["format"],
+            agent_root_relative=v.get("agent_root"),
             slash_command_relative_path=v.get("slash_command_path"),
             slash_command_format=v.get("slash_command_format"),
         )
@@ -171,17 +192,14 @@ def install_one(
     target = platform.absolute_path(home)
     target_dir = target.parent
 
-    # Detect whether the parent agent dir exists at all (e.g. ~/.claude).
-    # We treat the FIRST path segment under home as the agent root.
-    agent_root_name = Path(platform.relative_path).parts[0]
-    agent_root = (home or Path.home()) / agent_root_name
-    if not agent_root.exists():
+    # Skip if the agent isn't installed on this machine.
+    if not platform.absolute_agent_root(home).exists():
         return InstallResult(
             platform=platform,
             path=target,
             written=False,
             backed_up_from=None,
-            skipped_reason=f"{agent_root_name}/ not found (agent not installed)",
+            skipped_reason=f"~/{platform.agent_root}/ not found (agent not installed)",
         )
 
     # Existing skill content check — skip if identical (idempotent).
@@ -247,31 +265,91 @@ def install_all(
     *,
     dry_run: bool = False,
     force: bool = False,
+    selected: set[str] | None = None,
 ) -> list[InstallResult]:
-    """Install into all platforms whose agent root exists. Returns a list of results."""
+    """Install into platforms whose agent root exists.
+
+    If `selected` is provided, only install into platforms whose `key` is in the set —
+    every other detected platform is reported as `skipped_reason="declined"`. Pass
+    `None` (default) to install into every detected platform (legacy behavior).
+    """
     if platforms is None:
         platforms = load_platforms()
+    platforms = list(platforms)
     rendered = render_skill()
     backup_root = backup_path(home)
-    return [
-        install_one(
-            p,
-            rendered,
-            home=home,
-            dry_run=dry_run,
-            force=force,
-            backup_root=backup_root,
+    results: list[InstallResult] = []
+    for p in platforms:
+        if selected is not None and p.key not in selected:
+            results.append(
+                InstallResult(
+                    platform=p,
+                    path=p.absolute_path(home),
+                    written=False,
+                    backed_up_from=None,
+                    skipped_reason="declined",
+                )
+            )
+            continue
+        results.append(
+            install_one(
+                p,
+                rendered,
+                home=home,
+                dry_run=dry_run,
+                force=force,
+                backup_root=backup_root,
+            )
         )
-        for p in platforms
-    ]
+    return results
 
 
 # CLI wiring lives in cli.py; install_all() and install_one() are the public API.
 
 
-def cli_run(dry_run: bool, force: bool) -> int:
-    """Convenience entry for the `aidoctor install` subcommand. Returns exit code."""
-    results = install_all(dry_run=dry_run, force=force)
+def _detected_platforms(platforms: list[Platform], home: Path | None) -> tuple[list[Platform], list[Platform]]:
+    """Split platforms into (present, missing) based on whether each agent's root dir exists."""
+    present, missing = [], []
+    for p in platforms:
+        (present if p.absolute_agent_root(home).exists() else missing).append(p)
+    return present, missing
+
+
+def cli_run(dry_run: bool, force: bool, yes: bool = False, interactive: bool | None = None) -> int:
+    """Convenience entry for the `aidoctor install` subcommand. Returns exit code.
+
+    interactive defaults to True iff stdin is a TTY and --yes wasn't passed. CI/pipe
+    callers get the legacy install-all-detected behavior automatically.
+    """
+    platforms = load_platforms()
+    present, missing = _detected_platforms(platforms, home=None)
+
+    if interactive is None:
+        interactive = sys.stdin.isatty() and not yes
+
+    click.echo("aidoctor install — adds the aidoctor skill to your AI agent dirs.\n")
+    click.echo("Detected:")
+    for p in present:
+        click.echo(f"  ✓ {p.display_name:<16} ~/{p.agent_root}")
+    for p in missing:
+        click.echo(f"  ✗ {p.display_name:<16} (skipped: ~/{p.agent_root} not found)")
+    click.echo()
+
+    selected: set[str] | None = None
+    if interactive and present:
+        if click.confirm(f"Install into all {len(present)} detected agents?", default=True):
+            selected = {p.key for p in present}
+        else:
+            selected = set()
+            for p in present:
+                if click.confirm(f"  Install into {p.display_name}?", default=True):
+                    selected.add(p.key)
+            if not selected:
+                click.echo("\nNothing selected. Exiting.")
+                return 0
+        click.echo()
+
+    results = install_all(dry_run=dry_run, force=force, selected=selected)
     written = 0
     skipped = 0
     for r in results:

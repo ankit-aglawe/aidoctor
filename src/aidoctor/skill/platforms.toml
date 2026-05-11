@@ -22,6 +22,7 @@ format = "cursor"
 display_name = "OpenCode"
 path = ".config/opencode/rules/aidoctor.md"
 format = "opencode"
+agent_root = ".config/opencode"
 slash_command_path = ".config/opencode/commands/aidoctor.md"
 slash_command_format = "markdown"
 

@@ -159,14 +159,21 @@ def _print_rule_doc(rule_id: str) -> None:
     is_flag=True,
     help="Overwrite existing skill files even if content matches.",
 )
-def install_cmd(dry_run: bool, force: bool) -> None:
-    """Install the aidoctor skill into Claude Code / Cursor / Continue.dev agent dirs.
+@click.option(
+    "--yes",
+    "-y",
+    is_flag=True,
+    help="Skip prompts. Install into every detected agent. Use this in CI.",
+)
+def install_cmd(dry_run: bool, force: bool, yes: bool) -> None:
+    """Install the aidoctor skill into your AI agent dirs.
 
-    Detects which agents are installed by checking for the corresponding
-    ~/.claude, ~/.cursor, ~/.continue directories. Backs up any existing
-    skill file to ~/.cache/aidoctor/install-backups/<timestamp>/ before overwrite.
+    Detects which agents are installed (Claude Code, Cursor, Codex, Gemini CLI,
+    OpenCode), prompts you for which to install into, and writes the SKILL files.
+    In a TTY: interactive prompts. In CI or with --yes: installs into all detected.
+    Existing files are backed up to ~/.cache/aidoctor/install-backups/<timestamp>/.
     """
-    rc = install_cli_run(dry_run=dry_run, force=force)
+    rc = install_cli_run(dry_run=dry_run, force=force, yes=yes)
     sys.exit(rc)
 
 
