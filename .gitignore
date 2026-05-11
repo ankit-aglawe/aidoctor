@@ -42,3 +42,8 @@ Thumbs.db
 *.local
 .env
 .env.local
+
+
+# npx skills artifacts (other tools test with this repo)
+.agents/
+skills-lock.json

@@ -1,7 +1,7 @@
 {
   "name": "aidoctor",
   "version": "0.2.0",
-  "description": "Python coding harness for AI agents. 7 skills + 1 CLI catch slop at four time-points: writing (python-rules auto-loads), diff review (/aidoctor:simplify), one-file scan (/aidoctor:scan), and whole-project audit (/aidoctor:audit). Plus /aidoctor:help for the catalog, /aidoctor:rules for the rule reference, and using-aidoctor orientation. Same skills work in Cursor, Codex, Gemini CLI, and OpenCode via `uvx aidoctor install`.",
+  "description": "Coding harness for AI agents. 7 skills + 1 CLI orchestrate AI-slop review: write-time prevention, diff review, whole-project audit. Python rules ship today (25 patterns); React/JS/Rust/Go rule packs on the roadmap as additional SKILLs alongside python-rules. Same harness works in Claude Code, Cursor, Codex, Gemini CLI, OpenCode.",
   "author": {
     "name": "Ankit Aglawe",
     "email": "aglawe.ankit@gmail.com"

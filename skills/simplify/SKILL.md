@@ -1,7 +1,7 @@
 ---
 name: simplify
 version: 0.1.0
-description: Review just-changed Python code for reuse, quality, and efficiency — then fix the issues. Use whenever the user asks to simplify, clean up, refactor, dedupe, tighten, polish, or "review what I just changed" / "are there issues with this diff?" / "is this over-engineered?". Spawns three parallel reviewer subagents (reuse / quality / efficiency), aggregates findings, and applies fixes directly.
+description: Review just-changed code for reuse, quality, and efficiency — then fix the issues. Use whenever the user asks to simplify, clean up, refactor, dedupe, tighten, polish, or "review what I just changed" / "are there issues with this diff?" / "is this over-engineered?". Spawns three parallel reviewer subagents (reuse / quality / efficiency), aggregates findings, and applies fixes directly. Language-agnostic orchestration; Python rules deepest today.
 triggers:
   - simplify this
   - simplify what I just changed

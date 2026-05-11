@@ -1,7 +1,7 @@
 ---
 name: audit
 version: 0.1.0
-description: Audit a whole Python project — structure, dependencies, security, exception handling, code standards, test coverage, dead code. Use whenever the user asks to "audit this repo / project / codebase", "is this codebase prod-ready?", "review the whole project", "what's wrong with this codebase?", "do a security review", or "give me a deep code review". Different from `simplify` — that reviews a diff; audit reviews the WHOLE project at rest.
+description: Audit a whole code project — structure, dependencies, security, exception handling, code standards, test coverage, dead code. Use whenever the user asks to "audit this repo / project / codebase", "is this codebase prod-ready?", "review the whole project", "what's wrong with this codebase?", "do a security review", or "give me a deep code review". Different from `simplify` — that reviews a diff; audit reviews the WHOLE project at rest. Language-agnostic orchestration; Python rule pack (`python-rules`) shipping today, other languages on the roadmap.
 triggers:
   - audit this repo
   - audit this project

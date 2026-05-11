@@ -2,11 +2,13 @@
   <img src="https://raw.githubusercontent.com/ankit-aglawe/aidoctor/main/docs/banner.png" alt="aidoctor" width="660" />
 </p>
 
-> Your agent writes bad Python. This catches it.
+> Your agent writes bad code. This catches it.
 
-A coding harness for AI agents writing Python. 7 skills + 1 CLI catch 25 AI-slop patterns Claude Code, Cursor, Copilot, Codex, Gemini, and friends produce: bare `except`, hardcoded secrets, async/sync mismatch, dead defenses, fake type hints, stub comments shipped as production code. Same skills work across every major agent harness.
+A coding harness for AI agents. 7 skills + 1 CLI orchestrate AI-slop review: write-time prevention, diff review, project audit. The orchestration skills (`scan`, `simplify`, `audit`, `rules`) work on any code review task.
 
-Multi-language (JS / Rust / Go) is on the roadmap. Python ships today.
+**Python rules ship today** — 25 patterns across 8 categories (bare `except`, hardcoded secrets, async/sync mismatch, dead defenses, fake type hints, stub comments, AI-slop imports, stale loops). React (via [react-doctor](https://github.com/millionco/react-doctor) lift), JS, Rust, Go rule packs are on the roadmap — each is a new SKILL alongside `python-rules`, not a new tool.
+
+Same harness, every major agent: Claude Code, Cursor, Codex, Gemini CLI, OpenCode.
 
 [Install](#install) · [CLI](#cli) · [Rules](#what-it-catches) · [Leaderboard](#leaderboard) · [vs alternatives](#how-it-differs)
 

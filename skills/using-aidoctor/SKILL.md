@@ -1,7 +1,7 @@
 ---
 name: using-aidoctor
 version: 0.2.0
-description: Orientation for the aidoctor plugin. Use the first time the user touches a Python file in a session where aidoctor is installed, or when the user asks "what does aidoctor do?", "what skills are available?", "how do I use aidoctor?", "give me a tour", or seems uncertain which aidoctor skill to invoke.
+description: Orientation for the aidoctor plugin. Use the first time the user touches a code file in a session where aidoctor is installed, or when the user asks "what does aidoctor do?", "what skills are available?", "how do I use aidoctor?", "give me a tour", or seems uncertain which aidoctor skill to invoke. Python rule pack ships today; other languages on the roadmap.
 triggers:
   - what does aidoctor do
   - how do I use aidoctor
