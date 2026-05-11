@@ -12,7 +12,7 @@ triggers:
   - find bugs claude wrote
   - audit this repo
 benefits-from: [simplify, python-rules]
-allowed-tools: Bash(aidoctor *), Bash(uvx aidoctor*), Bash(pipx run aidoctor*), Read, Grep
+allowed-tools: Bash(aidoctor *), Bash(uvx aidoctor*), Bash(pipx run aidoctor*), Read, Edit, Write, Grep
 ---
 
 # aidoctor scan

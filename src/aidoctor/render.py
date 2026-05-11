@@ -210,6 +210,16 @@ def render_terminal(result: ScanResult, score: Score, console: Console | None = 
                 d.message,
             )
         console.print(table)
+        # Show docs URLs once per rule_id seen in this category — helps the
+        # user (or their agent) look up the full rationale without re-running
+        # `aidoctor scan --explain <id>`. DX-F4 from /plan-devex-review.
+        seen_urls: dict[str, str] = {}
+        for d in diags:
+            if d.url and d.rule_id not in seen_urls:
+                seen_urls[d.rule_id] = d.url
+        if seen_urls:
+            for rule_id, url in seen_urls.items():
+                console.print(Text(f"    {rule_id} → {url}", style="dim"))
         console.print()
 
 

@@ -1,7 +1,7 @@
 {
   "name": "aidoctor",
-  "version": "0.1.0",
-  "description": "Static analyzer for AI-generated Python. Catches bare except, hardcoded secrets, async/sync mismatch, dead defenses, fake type hints, stub comments. Installs a skill into your agent so it stops writing them.",
+  "version": "0.2.0",
+  "description": "Python coding harness for AI agents. 7 skills + 1 CLI catch slop at four time-points: writing (python-rules auto-loads), diff review (/aidoctor:simplify), one-file scan (/aidoctor:scan), and whole-project audit (/aidoctor:audit). Plus /aidoctor:help for the catalog, /aidoctor:rules for the rule reference, and using-aidoctor orientation. Same skills work in Cursor, Codex, Gemini CLI, and OpenCode via `uvx aidoctor install`.",
   "author": {
     "name": "Ankit Aglawe",
     "email": "aglawe.ankit@gmail.com"
@@ -9,5 +9,5 @@
   "homepage": "https://github.com/ankit-aglawe/aidoctor",
   "repository": "https://github.com/ankit-aglawe/aidoctor",
   "license": "MIT",
-  "keywords": ["python", "linter", "static-analysis", "ai-generated", "code-quality", "ai-slop"]
+  "keywords": ["python", "linter", "static-analysis", "ai-generated", "code-quality", "ai-slop", "harness", "claude-code", "codex", "cursor", "skill"]
 }

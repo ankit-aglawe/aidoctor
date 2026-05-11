@@ -4,7 +4,9 @@
 
 > Your agent writes bad Python. This catches it.
 
-A static analyzer for AI-generated Python code. Catches 25 patterns Claude Code, Cursor, Copilot, Codex, Gemini, and friends produce: bare `except`, hardcoded secrets, async/sync mismatch, dead defenses, fake type hints, stub comments shipped as production code. Then installs a skill into your agent so it stops writing them.
+A coding harness for AI agents writing Python. 7 skills + 1 CLI catch 25 AI-slop patterns Claude Code, Cursor, Copilot, Codex, Gemini, and friends produce: bare `except`, hardcoded secrets, async/sync mismatch, dead defenses, fake type hints, stub comments shipped as production code. Same skills work across every major agent harness.
+
+Multi-language (JS / Rust / Go) is on the roadmap. Python ships today.
 
 [Install](#install) · [CLI](#cli) · [Rules](#what-it-catches) · [Leaderboard](#leaderboard) · [vs alternatives](#how-it-differs)
 
@@ -21,13 +23,20 @@ Register the marketplace and install the plugin:
 /plugin install aidoctor@ankit-aglawe
 ```
 
-After install, just talk to Claude in plain English. Three skills auto-load:
+After install, just talk to Claude in plain English. Seven skills load:
 
-- **scan** — runs aidoctor, summarizes the top findings, asks before fixing
-- **simplify** — three-angle review (reuse / quality / efficiency), then fixes
-- **python-rules** — auto-loads when you write Python; your agent reads the 25 rules first
+| You want to | Invoke | Or say |
+|---|---|---|
+| **Write** Python (no action needed) | `python-rules` auto-loads | n/a |
+| **Lint** one file or path | `/aidoctor:scan` | "scan this", "lint my Python" |
+| **Review** your last diff | `/aidoctor:simplify` | "review what I just changed" |
+| **Audit** the whole repo | `/aidoctor:audit` | "audit this repo", "is it prod-ready?" |
+| **Browse** the rule catalog | `/aidoctor:rules` | "list aidoctor rules" |
+| **Get oriented** | `/aidoctor:help` | "how do I use aidoctor?" |
 
-Slash forms `/aidoctor:scan` and `/aidoctor:simplify` work too.
+Lost? Type `/aidoctor:help` for the full decision tree.
+
+The `using-aidoctor` skill auto-loads on first Python touch in a fresh session so your agent knows the catalog without you having to read this README.
 
 ### Cursor
 
@@ -214,11 +223,19 @@ Want your project listed? [Open a PR](https://github.com/ankit-aglawe/aidoctor/p
 
 ## Roadmap
 
-- [x] Claude Code plugin via `/plugin marketplace add ankit-aglawe/aidoctor`
+- [x] Claude Code plugin via `/plugin marketplace add ankit-aglawe/aidoctor` (v0.1+)
+- [x] 7-skill catalog: scan, simplify, audit, rules, help, using-aidoctor, python-rules (v0.2)
+- [ ] **`react-rules` SKILL pack** — lift the patterns from [react-doctor](https://github.com/millionco/react-doctor) (MIT) with attribution. v0.3 candidate, lowest-effort because the research is done
+- [ ] **`js-rules` SKILL pack** — language-level JS / TypeScript AI-slop (callback hell, var/let confusion, Promise.all misuse, this binding). v0.3 candidate
+- [ ] **`rust-rules` SKILL pack** — Rust AI-slop (unnecessary clones, Result anti-patterns, lifetime overengineering). v0.4 candidate
+- [ ] **`go-rules`, `vue-rules`, `next-rules`, etc.** — family pattern. Each language/framework is its own rule SKILL; orchestration skills (scan / simplify / audit) stay shared
+- [ ] Tree-sitter backbone in CLI for multi-language deterministic scan
 - [ ] Listed on the official Anthropic plugin marketplace
 - [ ] MCP server (`aidoctor mcp`) so Cursor / Windsurf / Codex / Gemini reach the rules over a single transport
 - [ ] `aidoctor learn` — propose project-local rules from your git history
 - [ ] PR-delta scoring on GitHub Action
+
+Want a language we haven't shipped yet? Upvote / open an issue. We build the next rule pack when there's signal.
 
 ## Credits
 

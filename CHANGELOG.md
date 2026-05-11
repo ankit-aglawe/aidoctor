@@ -2,7 +2,34 @@
 
 All notable changes to aidoctor are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). The project follows [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.2.0] — 2026-05-11
+
+### Added — the harness shape
+
+- Catalog expanded from 3 → 7 skills. New: `audit` (six-dimensional whole-project review), `rules` (browse the rule catalog), `using-aidoctor` (orientation, model-invoked when relevant), `help` (slash command for the catalog + decision tree)
+- New CLI command: `aidoctor rules` lists all 25 rules grouped by category, with `--category`, `--severity`, and `--json` filters
+- Rule URL surfaced in scan terminal output — each violation now shows its `aidoctor scan --explain <id>` docs link inline
+- `scan` and `audit` skill frontmatter now allow `Edit, Write` tools so the fix flows actually work (they previously claimed to fix but couldn't edit files)
+- Install flow detects non-Python project root and notes that skills install globally regardless
+
+### Changed
+
+- Plugin marketplace description rewritten to name the four time-points (writing / diff / project / CI) and explicit Python scope
+- README: new "what to invoke when" decision tree at the top of the Claude Code install section
+- Positioning: "Python coding harness for AI agents" (was "static analyzer"). Multi-language family architecture noted in roadmap
+- Interactive `aidoctor install` UX (cyan gradient banner + ◇/◆/●/○ icons) — lifted patterns from vercel-labs/skills
+- BANNER\_GRADIENT applies a 12-shade per-row cyan gradient to the AI/DOCTOR ANSI Shadow logo
+
+### Roadmap (declared, not shipped)
+
+- v0.3+: `js-rules` and `rust-rules` SKILL packs built via the same iteration-1..3 A/B testing methodology
+- v0.5+: tree-sitter backbone in CLI for multi-language deterministic scan
+- Listed on the official Anthropic plugin marketplace
+- MCP server (`aidoctor mcp`)
+- `aidoctor learn` — propose project-local rules from your git history
+- PR-delta scoring on GitHub Action
+
+## [0.1.0] — 2026-05-11
 
 ### Added
 

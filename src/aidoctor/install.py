@@ -352,8 +352,11 @@ def cli_run(dry_run: bool, force: bool, yes: bool = False, interactive: bool | N
 
     # Step 1: source + payload summary
     _step(console, "◇", "bright_cyan", "Source: https://pypi.org/project/aidoctor/", "white")
-    _step(console, "◇", "bright_cyan", f"3 skills: scan, simplify, python-rules", "white")
+    _step(console, "◇", "bright_cyan", "6 skills: scan, simplify, audit, rules, help, python-rules + using-aidoctor", "white")
     _step(console, "◇", "bright_cyan", f"{len(RULES)} rules across 8 categories", "white")
+    # Non-Python project note (DX-F7): the skills are global, not project-bound.
+    if not any(Path.cwd().rglob("*.py")):
+        _step(console, "◇", "bright_cyan", "No Python files detected in this dir — skills install globally regardless. You can scan a different project later with `aidoctor scan <path>`.", "dim")
     console.print()
 
     # Step 2: detection

@@ -13,7 +13,7 @@ triggers:
   - give me a deep code review
   - assess this repo
 benefits-from: [scan, simplify, python-rules]
-allowed-tools: Bash(aidoctor *), Bash(git *), Bash(find *), Bash(grep *), Bash(wc *), Bash(ls *), Read, Grep, Glob, Task
+allowed-tools: Bash(aidoctor *), Bash(git *), Bash(find *), Bash(grep *), Bash(wc *), Bash(ls *), Read, Edit, Write, Grep, Glob, Task
 ---
 
 # aidoctor audit

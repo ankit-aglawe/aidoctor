@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
   "name": "ankit-aglawe",
-  "description": "Plugins by @ankit-aglawe — including aidoctor, a static analyzer for AI-generated Python code.",
+  "description": "Plugins by @ankit-aglawe — including aidoctor, a coding harness for AI agents writing Python.",
   "owner": {
     "name": "Ankit Aglawe",
     "email": "aglawe.ankit@gmail.com"
@@ -10,7 +10,7 @@
     {
       "name": "aidoctor",
       "source": "./",
-      "description": "Catches the patterns AI agents write in Python: bare except, hardcoded secrets, async/sync mismatch, dead defenses, fake type hints, stub comments. Installs a skill so your agent stops generating them.",
+      "description": "Coding harness for AI agents writing Python. 7 skills + 1 CLI catch slop at writing time, in diffs, and across whole projects. JS / Rust / Go on the roadmap.",
       "homepage": "https://github.com/ankit-aglawe/aidoctor",
       "repository": "https://github.com/ankit-aglawe/aidoctor",
       "license": "MIT",

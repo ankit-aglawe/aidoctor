@@ -242,6 +242,78 @@ def skill_cmd(out_format: str) -> None:
     raise click.UsageError(f"unknown skill format: {fmt}")
 
 
+@main.command(name="rules")
+@click.option(
+    "--category",
+    type=str,
+    default=None,
+    help="Filter by category (e.g. secrets, dead-defenses, async-mismatch).",
+)
+@click.option(
+    "--severity",
+    type=click.Choice(["error", "warning"], case_sensitive=False),
+    default=None,
+    help="Filter by severity.",
+)
+@click.option(
+    "--json",
+    "json_output",
+    is_flag=True,
+    help="Emit JSON instead of terminal output.",
+)
+def rules_cmd(category: str | None, severity: str | None, json_output: bool) -> None:
+    """List all aidoctor rules with their IDs, severities, categories, and one-line messages.
+
+    Use `aidoctor scan --explain <rule-id>` for the full rationale on any one rule.
+    """
+    matched = []
+    for rule_class in RULES:
+        if category and rule_class.category.value != category:
+            continue
+        if severity and rule_class.severity.value != severity:
+            continue
+        matched.append(rule_class)
+
+    if json_output:
+        click.echo(json.dumps(
+            {
+                "count": len(matched),
+                "rules": [
+                    {
+                        "rule_id": r.rule_id,
+                        "severity": r.severity.value,
+                        "category": r.category.value,
+                        "message": r.message,
+                        "url": r.url,
+                    }
+                    for r in matched
+                ],
+            },
+            indent=2,
+        ))
+        return
+
+    # Terminal output — group by category, severity coloring
+    console = Console()
+    by_category: dict[str, list] = {}
+    for r in matched:
+        by_category.setdefault(r.category.value, []).append(r)
+
+    console.print(f"\n  [bold]{len(matched)} rules[/bold] across {len(by_category)} categories\n")
+    for cat in sorted(by_category):
+        console.print(f"  [bright_cyan bold]{cat}[/bright_cyan bold]")
+        for r in by_category[cat]:
+            sev_color = "red" if r.severity.value == "error" else "yellow"
+            console.print(
+                f"    [{sev_color}]{r.severity.value:>7}[/{sev_color}]  "
+                f"[bold]{r.rule_id:<35}[/bold]  {r.message}"
+            )
+        console.print()
+    console.print(
+        "  Look up a single rule:  [dim]aidoctor scan --explain <rule-id>[/dim]\n"
+    )
+
+
 @main.command(name="scan-pr")
 @click.argument("url", required=True)
 @click.option("--json", "json_output", is_flag=True, help="Emit JSON instead of terminal output.")
