@@ -5,7 +5,7 @@ stub comments like `# implement this` or `# TODO: implement`. These mark
 half-finished code as if it were complete.
 """
 
-# aidoctor: disable-file=stub-comment,hardcoded-api-key
+# aidoctor: disable-file=stub-comment,hardcoded-api-key,todo-without-ticket
 
 from __future__ import annotations
 
@@ -46,7 +46,7 @@ class TodoWithoutTicketRule(Rule):
         "AI assistants leave bare TODOs when uncertain — those usually mean unfinished "
         "work, not future work."
     )
-    url = "https://github.com/aidoctor/aidoctor#todo-without-ticket"
+    url = "https://github.com/ankit-aglawe/aidoctor#todo-without-ticket"
 
     def visit_Comment(self, node: cst.Comment) -> None:
         text = node.value
@@ -67,7 +67,7 @@ class StubCommentRule(Rule):
         "implementation, remove the comment, or raise NotImplementedError explicitly "
         "so the failure mode is visible at runtime."
     )
-    url = "https://github.com/aidoctor/aidoctor#stub-comment"
+    url = "https://github.com/ankit-aglawe/aidoctor#stub-comment"
 
     def visit_Comment(self, node: cst.Comment) -> None:
         text = node.value

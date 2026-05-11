@@ -32,7 +32,7 @@ class NestedLoopAppendRule(Rule):
         "Comprehensions allocate once; .append in a tight loop incurs repeated "
         "method-lookup and list-resize overhead."
     )
-    url = "https://github.com/aidoctor/aidoctor#nested-loop-append"
+    url = "https://github.com/ankit-aglawe/aidoctor#nested-loop-append"
 
     def __init__(self, context: Any) -> None:
         super().__init__(context)
@@ -66,7 +66,7 @@ class StrConcatInLoopRule(Rule):
         "Collect parts in a list and call `''.join(parts)` once, or use "
         "`io.StringIO()` + `.write(...)` + `.getvalue()`."
     )
-    url = "https://github.com/aidoctor/aidoctor#str-concat-in-loop"
+    url = "https://github.com/ankit-aglawe/aidoctor#str-concat-in-loop"
 
     def __init__(self, context: Any) -> None:
         super().__init__(context)
@@ -141,7 +141,7 @@ class RepeatedDictLookupRule(Rule):
         "when they're stitching independently-generated lines that all reach into "
         "the same dict. Three or more lookups of the same literal key is the threshold."
     )
-    url = "https://github.com/aidoctor/aidoctor#repeated-dict-lookup"
+    url = "https://github.com/ankit-aglawe/aidoctor#repeated-dict-lookup"
 
     def __init__(self, context: Any) -> None:
         super().__init__(context)

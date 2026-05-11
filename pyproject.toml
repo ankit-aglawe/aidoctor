@@ -45,10 +45,10 @@ dev = [
 aidoctor = "aidoctor.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/aidoctor/aidoctor"
-Documentation = "https://github.com/aidoctor/aidoctor#readme"
-Repository = "https://github.com/aidoctor/aidoctor"
-Issues = "https://github.com/aidoctor/aidoctor/issues"
+Homepage = "https://github.com/ankit-aglawe/aidoctor"
+Documentation = "https://github.com/ankit-aglawe/aidoctor#readme"
+Repository = "https://github.com/ankit-aglawe/aidoctor"
+Issues = "https://github.com/ankit-aglawe/aidoctor/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/aidoctor"]

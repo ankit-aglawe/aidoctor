@@ -17,11 +17,8 @@ from rich.text import Text
 from aidoctor import __version__
 from aidoctor.rules import CATEGORY_LABELS, Category, Diagnostic, Severity
 from aidoctor.score import (
-    GREAT_THRESHOLD,
-    LABEL_CRITICAL,
     LABEL_GREAT,
     LABEL_NEEDS_WORK,
-    NEEDS_WORK_THRESHOLD,
     Score,
 )
 from aidoctor.scan import ScanResult

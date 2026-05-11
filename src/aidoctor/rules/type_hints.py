@@ -27,7 +27,7 @@ class AnyEverywhereRule(Rule):
         "genuinely need an opaque type, use `object` (forces explicit downcasting) "
         "or document why `Any` is correct."
     )
-    url = "https://github.com/aidoctor/aidoctor#any-everywhere"
+    url = "https://github.com/ankit-aglawe/aidoctor#any-everywhere"
 
     def visit_FunctionDef(self, node: cst.FunctionDef) -> None:
         if node.name.value.startswith("_"):  # private functions are fine
@@ -55,7 +55,7 @@ class MissingReturnTypeRule(Rule):
         "`-> None`. For private functions (leading underscore), this rule does "
         "not apply."
     )
-    url = "https://github.com/aidoctor/aidoctor#missing-return-type"
+    url = "https://github.com/ankit-aglawe/aidoctor#missing-return-type"
 
     def visit_FunctionDef(self, node: cst.FunctionDef) -> None:
         if node.name.value.startswith("_"):
@@ -81,7 +81,7 @@ class GenericWithoutTypeVarRule(Rule):
         "TypeVar at module scope: `T = TypeVar('T')` (or `from typing import "
         "TypeVar`) before the class."
     )
-    url = "https://github.com/aidoctor/aidoctor#generic-without-typevar"
+    url = "https://github.com/ankit-aglawe/aidoctor#generic-without-typevar"
 
     def __init__(self, context: _Any) -> None:
         super().__init__(context)

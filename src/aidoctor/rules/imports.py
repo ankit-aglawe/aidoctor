@@ -7,7 +7,6 @@ without a try/except guard, and imports that are never used.
 
 from __future__ import annotations
 
-from collections import defaultdict
 from typing import Any
 
 import libcst as cst
@@ -28,7 +27,7 @@ class WildcardImportRule(Rule):
         "resolve names statically. AI assistants often generate this when they're "
         "uncertain what to import. Import names explicitly: `from module import a, b, c`."
     )
-    url = "https://github.com/aidoctor/aidoctor#wildcard-import"
+    url = "https://github.com/ankit-aglawe/aidoctor#wildcard-import"
 
     def visit_ImportFrom(self, node: cst.ImportFrom) -> None:
         if isinstance(node.names, cst.ImportStar):
@@ -49,7 +48,7 @@ class DuplicateImportRule(Rule):
         "`import numpy.linalg as nla`), the rule won't fire because the dotted "
         "module names differ."
     )
-    url = "https://github.com/aidoctor/aidoctor#duplicate-import"
+    url = "https://github.com/ankit-aglawe/aidoctor#duplicate-import"
 
     def __init__(self, context: Any) -> None:
         super().__init__(context)
@@ -104,7 +103,7 @@ class ConditionalImportOutsideTryRule(Rule):
         "try/except ImportError to fail loudly with a useful message, or restructure "
         "to use importlib.util.find_spec for capability checks."
     )
-    url = "https://github.com/aidoctor/aidoctor#conditional-import-outside-try"
+    url = "https://github.com/ankit-aglawe/aidoctor#conditional-import-outside-try"
 
     def _contains_import(self, body: cst.BaseStatement) -> bool:
         """Check if a statement body contains an Import or ImportFrom."""
@@ -143,7 +142,7 @@ class ImportWithoutUseRule(Rule):
         "If you intentionally export it for re-import elsewhere, add it to `__all__`. "
         "If it's for type-checking only, move it under `if TYPE_CHECKING:`."
     )
-    url = "https://github.com/aidoctor/aidoctor#import-without-use"
+    url = "https://github.com/ankit-aglawe/aidoctor#import-without-use"
 
     def __init__(self, context: Any) -> None:
         super().__init__(context)

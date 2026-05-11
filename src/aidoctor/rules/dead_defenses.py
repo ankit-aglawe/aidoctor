@@ -26,7 +26,7 @@ class BareExceptPassRule(Rule):
         "you expect (`except ValueError:`), log the error before continuing, or remove "
         "the try block entirely."
     )
-    url = "https://github.com/aidoctor/aidoctor#bare-except-pass"
+    url = "https://github.com/ankit-aglawe/aidoctor#bare-except-pass"
 
     def visit_ExceptHandler(self, node: cst.ExceptHandler) -> None:
         # Check body: a single SimpleStatementLine containing only Pass.
@@ -63,7 +63,7 @@ class ExceptExceptionSwallowingRule(Rule):
         "Catch the specific exception you can handle. If you want a top-level safety "
         "net, place it once at the program boundary and either log+exit or re-raise."
     )
-    url = "https://github.com/aidoctor/aidoctor#except-exception-swallowing"
+    url = "https://github.com/ankit-aglawe/aidoctor#except-exception-swallowing"
 
     def visit_ExceptHandler(self, node: cst.ExceptHandler) -> None:
         if node.type is None:
@@ -96,7 +96,7 @@ class UnreachableRaiseRule(Rule):
         "you intended a conditional, restructure with an explicit `if` before the "
         "raise."
     )
-    url = "https://github.com/aidoctor/aidoctor#unreachable-raise"
+    url = "https://github.com/ankit-aglawe/aidoctor#unreachable-raise"
 
     def visit_IndentedBlock(self, node: cst.IndentedBlock) -> None:
         prev_was_return = False
@@ -126,7 +126,7 @@ class RedundantNullCheckAfterIsinstanceRule(Rule):
         "any type except NoneType). AI assistants add the `is not None` check "
         "defensively. Remove the redundant check: just write `if isinstance(x, T):`."
     )
-    url = "https://github.com/aidoctor/aidoctor#redundant-null-check-after-isinstance"
+    url = "https://github.com/ankit-aglawe/aidoctor#redundant-null-check-after-isinstance"
 
     def visit_BooleanOperation(self, node: cst.BooleanOperation) -> None:
         if not isinstance(node.operator, cst.And):

@@ -55,7 +55,7 @@ class HardcodedApiKeyRule(Rule):
         "environment variables (`os.environ['API_KEY']`) or a secret manager. "
         "If this is a test fixture or placeholder, rename the variable or shorten the value."
     )
-    url = "https://github.com/aidoctor/aidoctor#hardcoded-api-key"
+    url = "https://github.com/ankit-aglawe/aidoctor#hardcoded-api-key"
 
     def visit_Assign(self, node: cst.Assign) -> None:
         # We care about simple `NAME = "value"` patterns.
@@ -113,7 +113,7 @@ class AwsCredentialsRule(Rule):
         "remove from history (git filter-branch / BFG), and migrate to IAM roles or "
         "secrets manager. Never use hardcoded AWS creds in application code."
     )
-    url = "https://github.com/aidoctor/aidoctor#aws-credentials"
+    url = "https://github.com/ankit-aglawe/aidoctor#aws-credentials"
 
     def visit_SimpleString(self, node: cst.SimpleString) -> None:
         value = node.evaluated_value
@@ -136,7 +136,7 @@ class JwtTokenRule(Rule):
         "permissions. Move to environment variables or use a refresh flow. If this is "
         "a test fixture, mark with `# aidoctor: disable=jwt-token`."
     )
-    url = "https://github.com/aidoctor/aidoctor#jwt-token"
+    url = "https://github.com/ankit-aglawe/aidoctor#jwt-token"
 
     def visit_SimpleString(self, node: cst.SimpleString) -> None:
         value = node.evaluated_value

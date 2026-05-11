@@ -39,7 +39,7 @@ class SyncIoInAsyncFnRule(Rule):
         "`asyncio.sleep`, `httpx.AsyncClient`, `aiofiles.open`, or wrap blocking "
         "calls in `asyncio.to_thread(...)`."
     )
-    url = "https://github.com/aidoctor/aidoctor#sync-io-in-async-fn"
+    url = "https://github.com/ankit-aglawe/aidoctor#sync-io-in-async-fn"
 
     def __init__(self, context: Any) -> None:
         super().__init__(context)
@@ -88,7 +88,7 @@ class AsyncioRunInsideAsyncFnRule(Rule):
         "to schedule it. AI assistants reach for `asyncio.run` when they're "
         "uncertain about how to await something."
     )
-    url = "https://github.com/aidoctor/aidoctor#asyncio-run-inside-async-fn"
+    url = "https://github.com/ankit-aglawe/aidoctor#asyncio-run-inside-async-fn"
 
     def __init__(self, context: Any) -> None:
         super().__init__(context)
@@ -132,7 +132,7 @@ class BlockingCallInEventLoopRule(Rule):
         "this is intentional (e.g., the call is non-blocking in your context), "
         "suppress with `# aidoctor: disable=blocking-call-in-event-loop`."
     )
-    url = "https://github.com/aidoctor/aidoctor#blocking-call-in-event-loop"
+    url = "https://github.com/ankit-aglawe/aidoctor#blocking-call-in-event-loop"
 
     SUSPECT_SUFFIXES = ("_sync", "_blocking")
     SUSPECT_NAMES = frozenset({"sleep", "wait_for", "recv", "recv_into", "read", "readline"})

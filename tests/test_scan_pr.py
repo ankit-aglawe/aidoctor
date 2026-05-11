@@ -8,12 +8,12 @@ from aidoctor.scan_pr import BadPrUrlError, ParsedPr, parse_url
 
 
 def test_parse_url_happy_path() -> None:
-    pr = parse_url("https://github.com/aidoctor/aidoctor/pull/123")
-    assert pr == ParsedPr(owner="aidoctor", repo="aidoctor", number=123)
+    pr = parse_url("https://github.com/ankit-aglawe/aidoctor/pull/123")
+    assert pr == ParsedPr(owner="ankit-aglawe", repo="aidoctor", number=123)
 
 
 def test_parse_url_trailing_slash() -> None:
-    pr = parse_url("https://github.com/aidoctor/aidoctor/pull/123/")
+    pr = parse_url("https://github.com/ankit-aglawe/aidoctor/pull/123/")
     assert pr.number == 123
 
 
@@ -26,11 +26,11 @@ def test_parse_url_with_dotted_org() -> None:
 @pytest.mark.parametrize(
     "bad",
     [
-        "https://github.com/aidoctor/aidoctor",  # missing /pull/N
+        "https://github.com/ankit-aglawe/aidoctor",  # missing /pull/N
         "https://gitlab.com/foo/bar/pull/1",  # wrong host
         "http://example.com",
         "not a url at all",
-        "https://github.com/aidoctor/aidoctor/pull/abc",  # non-numeric PR
+        "https://github.com/ankit-aglawe/aidoctor/pull/abc",  # non-numeric PR
         "",
     ],
 )
