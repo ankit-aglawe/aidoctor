@@ -19,6 +19,8 @@ from typing import Iterable
 
 import click
 from jinja2 import Environment, PackageLoader, select_autoescape
+from rich.console import Console
+from rich.text import Text
 
 try:
     import tomllib  # type: ignore[import-not-found]
@@ -27,6 +29,9 @@ except ModuleNotFoundError:  # pragma: no cover — only on py<3.11
 
 from aidoctor import __version__ as AIDOCTOR_VERSION
 from aidoctor.rules import CATEGORY_LABELS, RULES, Category
+
+# Reference RULES module-level for the install step header (rule count, etc.)
+_ = CATEGORY_LABELS
 
 logger = logging.getLogger(__name__)
 
@@ -315,28 +320,57 @@ def _detected_platforms(platforms: list[Platform], home: Path | None) -> tuple[l
     return present, missing
 
 
+def _step(console: Console, icon: str, icon_style: str, text: str, text_style: str = "") -> None:
+    """Print a single step line — `◇ Source: ...` rhythm from vercel-labs/skills.
+
+    icon: ◇ (pending/info), ◆ (active prompt), ✓ (done), ✗ (skipped), ● (selected), ○ (unselected).
+    """
+    line = Text()
+    line.append(f"{icon} ", style=icon_style)
+    line.append(text, style=text_style)
+    console.print(line)
+
+
 def cli_run(dry_run: bool, force: bool, yes: bool = False, interactive: bool | None = None) -> int:
     """Convenience entry for the `aidoctor install` subcommand. Returns exit code.
 
-    interactive defaults to True iff stdin is a TTY and --yes wasn't passed. CI/pipe
-    callers get the legacy install-all-detected behavior automatically.
+    Interactive in a TTY (unless --yes); silent install-all-detected in CI / pipes.
+    UX mirrors vercel-labs/skills (banner + ◇ step icons in our cyan).
     """
+    # Lazy import to avoid a circular dep — render imports rules/score which import install.
+    from aidoctor.render import render_banner  # noqa: PLC0415
+
+    console = Console()
     platforms = load_platforms()
     present, missing = _detected_platforms(platforms, home=None)
 
     if interactive is None:
         interactive = sys.stdin.isatty() and not yes
 
-    click.echo("aidoctor install — adds the aidoctor skill to your AI agent dirs.\n")
-    click.echo("Detected:")
-    for p in present:
-        click.echo(f"  ✓ {p.display_name:<16} ~/{p.agent_root}")
-    for p in missing:
-        click.echo(f"  ✗ {p.display_name:<16} (skipped: ~/{p.agent_root} not found)")
-    click.echo()
+    # Header — brand banner + tagline
+    render_banner(console)
 
+    # Step 1: source + payload summary
+    _step(console, "◇", "bright_cyan", "Source: https://pypi.org/project/aidoctor/", "white")
+    _step(console, "◇", "bright_cyan", f"3 skills: scan, simplify, python-rules", "white")
+    _step(console, "◇", "bright_cyan", f"{len(RULES)} rules across 8 categories", "white")
+    console.print()
+
+    # Step 2: detection
+    _step(console, "◆", "bright_cyan", "Detected agents", "bold white")
+    for p in present:
+        console.print(Text(f"  ● {p.display_name:<18} ~/{p.agent_root}", style="green"))
+    for p in missing:
+        console.print(Text(f"  ○ {p.display_name:<18} (not installed)", style="dim"))
+    console.print()
+
+    if not present:
+        _step(console, "✗", "yellow", "No agents detected. Install at least one (Claude Code, Cursor, Codex, Gemini CLI, OpenCode) first.", "yellow")
+        return 0
+
+    # Step 3: agent selection
     selected: set[str] | None = None
-    if interactive and present:
+    if interactive:
         if click.confirm(f"Install into all {len(present)} detected agents?", default=True):
             selected = {p.key for p in present}
         else:
@@ -345,28 +379,34 @@ def cli_run(dry_run: bool, force: bool, yes: bool = False, interactive: bool | N
                 if click.confirm(f"  Install into {p.display_name}?", default=True):
                     selected.add(p.key)
             if not selected:
-                click.echo("\nNothing selected. Exiting.")
+                _step(console, "✗", "yellow", "Nothing selected. Exiting.", "yellow")
                 return 0
-        click.echo()
+        console.print()
 
+    # Step 4: install
     results = install_all(dry_run=dry_run, force=force, selected=selected)
     written = 0
     skipped = 0
+    _step(console, "◆", "bright_cyan", "Writing", "bold white")
     for r in results:
         if r.written:
-            backup_note = (
-                f" (backed up old to {r.backed_up_from})" if r.backed_up_from else ""
-            )
-            click.echo(f"  [✓] {r.platform.display_name}: wrote {r.path}{backup_note}")
+            backup_note = f"  (backed up old)" if r.backed_up_from else ""
+            console.print(Text(f"  ✓ {r.platform.display_name:<18} {r.path}{backup_note}", style="green"))
             written += 1
         else:
-            click.echo(f"  [-] {r.platform.display_name}: {r.skipped_reason}")
+            console.print(Text(f"  ○ {r.platform.display_name:<18} {r.skipped_reason}", style="dim"))
             skipped += 1
-    click.echo()
+    console.print()
     if written == 0 and skipped == len(results):
-        click.echo(
-            "No platforms updated. Either no agents are installed, or skills are already up to date."
-        )
+        _step(console, "○", "dim", "Nothing to do — agents already up to date (or no agents installed).", "dim")
     else:
-        click.echo(f"Done. {written} written, {skipped} skipped.")
+        _step(console, "✓", "green", f"Done. {written} written, {skipped} skipped.", "bold")
+        if written > 0 and not dry_run:
+            console.print()
+            done = Text("  Try ", style="white")
+            done.append("/aidoctor:scan", style="bright_cyan bold")
+            done.append(" in Claude Code, or say ", style="white")
+            done.append('"scan this"', style="italic")
+            done.append(" to any agent.", style="white")
+            console.print(done)
     return 0
