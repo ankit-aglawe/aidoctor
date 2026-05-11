@@ -19,6 +19,24 @@ aidoctor scan .
 
 That's it. No signup, no API key, no telemetry.
 
+## Install via your AI agent (one paste)
+
+Don't want to install yourself? Paste the block below into **Claude Code, Cursor, Codex, Aider, or Gemini CLI**. The agent installs aidoctor, sets up the skill in its own config dir, and asks before scanning.
+
+> **Install AI Doctor and run my first scan.**
+>
+> **Step 1.** Install aidoctor. Pick the first method available on my system: `uv tool install aidoctor`, then `pipx install aidoctor`, then `pip install --user aidoctor`. If aidoctor is already installed, skip this step.
+>
+> **Step 2.** Run `aidoctor install`. This writes a `SKILL.md` for you (Claude → `~/.claude/skills/aidoctor/SKILL.md`, Cursor → `~/.cursor/rules/aidoctor.mdc`, etc.). After this you'll apply 25 rules against AI-slop Python patterns whenever you write Python for me — no more `except: pass`, no hardcoded `API_KEY = "..."`, no `range(len(x))` loops, no stub comments.
+>
+> **Step 3.** Ask me: *"Want me to scan your current project now?"* Wait for my y/n.
+>
+> **Step 4 (only if I say yes).** Run `aidoctor scan .` in my current directory. Summarize in one paragraph: (a) the score out of 100 and its label, (b) the top 3 rule violations and what each means in plain English, (c) whether I should fix the errors first or warnings first. Do not modify any of my files. Stop after the summary and wait for me to decide what to do next.
+>
+> Do not run any commands beyond the four above. Confirm with me before any `pip install` if I'm in a system Python without a venv.
+
+After install, `aidoctor scan` works from any project directory. Re-run anytime.
+
 ## How it works
 
 aidoctor runs 25 rules against your Python code via `libcst`. Each rule targets a pattern AI coding assistants regularly produce. Output is a 0-100 health score with a doctor-face ASCII emoticon, plus violations grouped by category. The score penalizes unique rules tripped, not violation count, so you fix categories of issues rather than chasing line counts.
