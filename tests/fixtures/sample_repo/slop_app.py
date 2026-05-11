@@ -54,3 +54,58 @@ def check(x):
 def unused_import_user():
     """References only json, leaves tomli/sys nominally used."""
     return json.dumps({"ok": True})
+
+
+# --- async/sync mismatch ---
+import asyncio
+import requests
+import time
+
+
+async def bad_async():
+    """Triggers sync-io-in-async-fn, asyncio-run-inside-async-fn, blocking-call-in-event-loop."""
+    time.sleep(1)  # sync-io-in-async-fn
+    requests.get("http://x")  # sync-io-in-async-fn (different builtin)
+    asyncio.run(other())  # asyncio-run-inside-async-fn
+    legacy_fetch_sync()  # blocking-call-in-event-loop
+
+
+async def other():
+    pass
+
+
+def legacy_fetch_sync():
+    return None
+
+
+# --- fake type hints ---
+from typing import Any, Generic  # noqa
+
+
+def opaque_api(data: Any) -> Any:  # any-everywhere
+    return data
+
+
+class Cache(Generic[T]):  # generic-without-typevar (T is undefined)
+    pass
+
+
+# --- perf rules ---
+def nested_accum(xs, ys):
+    """nested-loop-append + str-concat-in-loop + repeated-dict-lookup."""
+    out = []
+    s = ""
+    for x in xs:
+        for y in ys:
+            out.append((x, y))  # nested-loop-append
+        s += "tick\n"  # str-concat-in-loop
+
+
+def repeated_lookup(config):
+    """repeated-dict-lookup (same key 3+ times)."""
+    config["host"] = config["host"].lower()
+    if config["host"] == "localhost":
+        config["host"] = "127.0.0.1"
+
+
+# --- time.sleep in tests is covered by test files, not here ---

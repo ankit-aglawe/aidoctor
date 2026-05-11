@@ -177,6 +177,14 @@ class ImportWithoutUseRule(Rule):
         if self._in_type_checking or isinstance(node.names, cst.ImportStar):
             return
         for alias in node.names:
+            # PEP 484 explicit-re-export: `from .core import X as X` means
+            # "this module publicly re-exports X". Don't flag it as unused.
+            if (
+                alias.asname is not None
+                and isinstance(alias.name, cst.Name)
+                and alias.asname.name.value == alias.name.value
+            ):
+                continue
             name = alias.asname.name.value if alias.asname else _last_attr(alias.name)
             if name:
                 self._bindings[name] = alias
