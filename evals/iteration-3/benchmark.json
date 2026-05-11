@@ -1,0 +1,70 @@
+{
+  "iteration": 3,
+  "date": "2026-05-11",
+  "skill_under_test": "audit (skills/audit/SKILL.md)",
+  "method": "Built a deliberate test corpus (evals/iteration-3/test-corpus/, 5 Python files, ~80 LOC) with 22 known issues curated in GROUND_TRUTH.md across 3 tiers. Spawned 2 subagents — one with no skill (baseline) and one that reads audit SKILL.md and applies its six-dimensional framework. Both produced audit reports. Graded each against the 22-item ground truth.",
+  "ground_truth_total": 22,
+  "ground_truth_tier_counts": {"tier_1": 6, "tier_2": 10, "tier_3": 6},
+  "results": {
+    "baseline": {
+      "total_findings_caught_from_gt": 19,
+      "missed_from_gt": ["#6 missing test coverage (caught but tier-disagree)", "#8 unpinned deps not enumerated", "#19 mixed import style"],
+      "catch_rate_pct": 86,
+      "tier_calibration": "Loose — elevated #7 duplicate httpx to T1, classified #6 missing tests at T2 not T1",
+      "extra_findings_beyond_gt": [
+        "URL injection via f-string in requests.get",
+        "Missing timeout on requests.get",
+        "Hardcoded relative DB path",
+        "No schema migration / CREATE TABLE",
+        "delete_item shadows builtin id",
+        "format_currency hardcodes $",
+        "Missing CI config + .gitignore + LICENSE",
+        "No pytest fixtures / conftest.py"
+      ],
+      "format": "Narrative bullet list, 3 tiers, one-paragraph recommendation",
+      "structure_score": "Functional but ad-hoc"
+    },
+    "with_skill": {
+      "total_findings_caught_from_gt": 21,
+      "missed_from_gt": ["#6 (caught but tier-disagree, classified T2 not T1)", "#19 mixed import style"],
+      "catch_rate_pct": 95,
+      "tier_calibration": "Tighter — explicit tier-with-justification per finding; dedup attribution (SEC1 ↔ scanner's hardcoded-api-key, C2 ↔ scanner's time-sleep-in-test)",
+      "extra_findings_beyond_gt": [
+        "D6 requests imported but never declared as dep (T1)",
+        "S4 missing LICENSE blocks lawful redistribution (T2)",
+        "S5 missing .gitignore",
+        "C3 untestable network call in only test — bare except (E1) makes assertion meaningless",
+        "C5 format_currency + parse_csv have zero callers",
+        "C6 db.py functions hardcode connection — no DI seam"
+      ],
+      "format": "Phases 1-5, six dimensional tables, STOP gate checklist, full D1 decision brief with A/B/C + ELI10 + pros/cons + Net line",
+      "structure_score": "Follows the audit skill's specified format exactly"
+    }
+  },
+  "headline_findings": [
+    "Both subagents caught 80%+ of ground truth findings. The skill caught 21/22 vs baseline's 19/22.",
+    "Raw finding count delta is small (+2) because the corpus is small and many issues are obvious (SQL injection f-strings, hardcoded keys, bare except).",
+    "The BIG delta is process discipline: with_skill produced phase-structured output, ran the Iron Law check (six dimensions, no skipping), dedup'd overlapping findings explicitly, and emitted a full decision brief with three options instead of a one-paragraph recommendation.",
+    "Tier calibration is tighter with the skill — every finding has an explicit tier with one-line justification. Baseline's tiering was more ad-hoc (elevated some T2 items to T1, demoted others).",
+    "Baseline went DEEPER on some specific findings the GROUND_TRUTH.md didn't enumerate (e.g., delete_item shadowing builtin `id`, hardcoded DB path, missing schema migration). Baseline doesn't have the skill's structure but applies more domain knowledge per-file.",
+    "Critical: both correctly identified all 3 TIER-1 security bugs (2 SQL injections + hardcoded API key) — the must-not-ship issues. The skill doesn't change the floor; it changes the calibration."
+  ],
+  "what_iteration_3_validates": [
+    "The audit skill produces a structured, dedup'd, tier-calibrated report in a small fraction of an LLM's context window (~250 lines vs baseline's ~40 lines).",
+    "The skill's Iron Law (six dimensions, no skipping) is respected — with_skill explicitly enumerated every dimension even when findings were sparse.",
+    "The decision brief format is preserved — A/B/C options with ELI10 + ≥40-char pros-cons + Net line.",
+    "Phase 5's 'don't manufacture findings' rule held — with_skill noted Phase 4 was deliberately skipped (no modifications per the test harness), not faked as 'we fixed everything'."
+  ],
+  "limitations": [
+    "Small corpus (5 files, 80 LOC, 22 known issues). On a 50-100 file real-world repo, baseline would likely miss many more findings because it can't keep all the context coherent without the dimensional structure.",
+    "Single shot per agent — didn't test the iterative 'audit → user picks Option A → apply fixes → re-audit' loop.",
+    "Subagents applied dimensions sequentially in-process (we said 'don't spawn sub-subagents'). Real /aidoctor:audit in Claude Code would spawn 6 parallel reviewers.",
+    "Ground truth was curated by the same author (me) who designed the corpus — subject to confirmation bias. A fairer test would have one person plant issues and another grade the audits."
+  ],
+  "next_iteration_candidates": [
+    "iteration-4: run audit on a real Python repo (aidoctor itself, or a small popular OSS repo) where ground truth isn't known a priori — measure what the audit surfaces that scan misses.",
+    "iteration-5: test the iterative loop — audit → A choice → apply fixes → re-audit. Does the score move? Do new findings emerge from the fixes?",
+    "iteration-6: real Claude Code dispatch with 6 actual parallel reviewers (not sequential in-process). Compare findings vs sequential application.",
+    "Decision: should the audit skill ship in v0.1.x or wait for v0.2 with the iterative loop validated?"
+  ]
+}
