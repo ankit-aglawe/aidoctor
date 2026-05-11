@@ -65,12 +65,6 @@ def main() -> None:
     help="Exit non-zero if violations of the given severity (or worse) are found.",
 )
 @click.option(
-    "--fix-prompt",
-    is_flag=True,
-    help="Print a markdown prompt your AI agent can paste to fix every violation. "
-    "Pairs with `aidoctor install` so the agent already knows the rules.",
-)
-@click.option(
     "--verbose",
     "-v",
     is_flag=True,
@@ -83,7 +77,6 @@ def scan_cmd(
     diff_mode: bool,
     staged: bool,
     fail_on: str,
-    fix_prompt: bool,
     verbose: bool,
 ) -> None:
     """Scan PATH(s) for AI-slop Python patterns. Defaults to current directory."""
@@ -123,10 +116,6 @@ def scan_cmd(
 
     score = compute_score(result.diagnostics)
 
-    if fix_prompt:
-        _emit_fix_prompt(result)
-        sys.exit(EXIT_OK)
-
     if json_output:
         _emit_json(result, score)
     else:
@@ -140,42 +129,6 @@ def scan_cmd(
     ):
         sys.exit(EXIT_FAIL_ON)
     sys.exit(EXIT_OK)
-
-
-def _emit_fix_prompt(result) -> None:
-    """Print a markdown prompt designed to be pasted into Claude/Cursor/Codex/etc.
-
-    The prompt assumes the agent has the aidoctor SKILL.md installed (via
-    `aidoctor install`) so it already knows the rules and conventions. It just
-    needs to know WHICH lines violate which rules and apply the fixes.
-    """
-    from collections import defaultdict
-
-    by_file: dict[str, list] = defaultdict(list)
-    for d in result.diagnostics:
-        by_file[str(d.file)].append(d)
-
-    click.echo("# Fix aidoctor violations")
-    click.echo()
-    click.echo(
-        "You have the aidoctor skill installed, so you know the rules. "
-        "Fix every violation below in the listed file. Do not change behavior beyond the fix. "
-        "After applying, run `aidoctor scan` to verify the violation count drops to zero."
-    )
-    click.echo()
-    if not by_file:
-        click.echo("No violations to fix.")
-        return
-
-    for file, diags in by_file.items():
-        click.echo(f"## `{file}`")
-        click.echo()
-        for d in sorted(diags, key=lambda x: x.line):
-            click.echo(f"- **Line {d.line}** ({d.rule_id}, {d.severity.value}): {d.message}")
-            if d.help:
-                click.echo(f"  - Fix guidance: {d.help}")
-        click.echo()
-    click.echo("Apply the fixes. Do not introduce any new aidoctor violations.")
 
 
 def _emit_json(result, score) -> None:

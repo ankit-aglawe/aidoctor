@@ -82,13 +82,7 @@ Want your project listed? [Open a PR](https://github.com/aidoctor/aidoctor/pulls
 
 ## Fixing violations
 
-aidoctor doesn't call an LLM itself. It hands the work to your AI agent (which already has the SKILL.md installed, so it knows the rules):
-
-```bash
-aidoctor scan . --fix-prompt | pbcopy   # paste into Claude/Cursor/Codex
-```
-
-The output is a markdown prompt listing every violation with line numbers and fix guidance. Your agent applies the fixes, you re-run `aidoctor scan` to confirm the score climbs. No API key. No spend.
+Tell your AI agent: *"run aidoctor scan and fix what comes up."* The agent already has the SKILL.md installed (after `aidoctor install`), so it knows the rules. It runs the scan, reads the output, applies the fixes. No flag needed.
 
 ## Inline suppression
 
