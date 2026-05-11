@@ -1,0 +1,86 @@
+{
+  "iteration": 1,
+  "date": "2026-05-11",
+  "skill_under_test": "python-rules (skills/python-rules/SKILL.md)",
+  "method": "For each eval, spawn one subagent WITHOUT the skill (baseline) and one WITH the skill (with_skill). Both write Python for the same task. Compare via aidoctor scan + human read.",
+  "evals": [
+    {
+      "id": 1,
+      "name": "fastapi-auth-endpoint",
+      "lines": {"baseline": 205, "with_skill": 138},
+      "scan": {
+        "baseline": {"score": 100, "violations": 0, "errors": 0, "warnings": 0},
+        "with_skill": {"score": 100, "violations": 0, "errors": 0, "warnings": 0}
+      },
+      "qual_winner": "with_skill",
+      "qual_notes": "Both refused production-key pressure (baseline from model training, not skill — confounder). Skill version 33% shorter, no typing.Any, cleaner separation (VerifiedUser model), strips upstream claims defensively, consistent `raise X from exc`. Baseline has _require_config helper + runtime checks the skill version doesn't need (os.environ[KEY] fail-fast at import)."
+    },
+    {
+      "id": 2,
+      "name": "data-cleaning-pipeline",
+      "lines": {"baseline": 13, "with_skill": 49},
+      "scan": {
+        "baseline": {"score": 96, "violations": 2, "errors": 0, "warnings": 2, "rules": ["import-without-use", "missing-return-type"]},
+        "with_skill": {"score": 100, "violations": 0, "errors": 0, "warnings": 0}
+      },
+      "qual_winner": "with_skill",
+      "qual_notes": "Baseline uses df.iterrows() loop (slow + anti-pattern) and mutates input via df.drop(indices). Skill version is vectorized (boolean mask), doesn't mutate, returns .copy(), handles NaT, configurable now= for testability. Skill slightly verbose on validation/docstring (14-line docstring for what's a 4-line vectorized op)."
+    },
+    {
+      "id": 3,
+      "name": "async-cache-wrapper",
+      "lines": {"baseline": 33, "with_skill": 93},
+      "scan": {
+        "baseline": {"score": 86, "violations": 6, "errors": 2, "warnings": 3, "rules": ["sync-io-in-async-fn", "asyncio-run-inside-async-fn", "blocking-call-in-event-loop", "except-exception-swallowing", "missing-return-type"]},
+        "with_skill": {"score": 100, "violations": 0, "errors": 0, "warnings": 0}
+      },
+      "qual_winner": "with_skill",
+      "qual_notes": "STRONGEST DEMO of skill value. Baseline uses sync requests.get + time.sleep inside async function (blocks event loop) AND calls asyncio.run from inside async (RuntimeError at runtime). Three real production bugs. Skill version uses httpx.AsyncClient + await asyncio.sleep + await of inner coroutine + async lock around shared cache dict. The 'production by tomorrow just make it work' pressure broke the baseline."
+    },
+    {
+      "id": 4,
+      "name": "stub-out-todo",
+      "lines": {"baseline": 26, "with_skill": 18},
+      "scan": {
+        "baseline": {"score": 98, "violations": 2, "errors": 0, "warnings": 1, "rules": ["todo-without-ticket"]},
+        "with_skill": {"score": 100, "violations": 0, "errors": 0, "warnings": 0}
+      },
+      "qual_winner": "with_skill",
+      "qual_notes": "Baseline does the safe thing (raises NotImplementedError) but ALSO leaves a bare TODO comment in each function. Skill version drops the redundant TODO and only keeps NotImplementedError with explicit reason. Cleaner. Skill version is 31% shorter."
+    },
+    {
+      "id": 5,
+      "name": "type-safe-cache",
+      "lines": {"baseline": 27, "with_skill": 17},
+      "scan": {
+        "baseline": {"score": 100, "violations": 0, "errors": 0, "warnings": 0},
+        "with_skill": {"score": 100, "violations": 0, "errors": 0, "warnings": 0}
+      },
+      "qual_winner": "tie",
+      "qual_notes": "Confounder: model's training kicks in for the Generic[T] / TypeVar pattern — baseline already imports TypeVar and uses Generic[T] correctly despite the prompt's pressure ('just use T directly'). Skill confirms but doesn't add value here."
+    }
+  ],
+  "summary": {
+    "avg_score_baseline": 96.0,
+    "avg_score_with_skill": 100.0,
+    "avg_violations_baseline": 2.0,
+    "avg_violations_with_skill": 0.0,
+    "wins_for_skill_quant": 3,
+    "ties_quant": 2,
+    "wins_for_skill_qual": 4,
+    "ties_qual": 1
+  },
+  "headline_findings": [
+    "Skill drives avg score 96 → 100 across 5 evals. 3/5 evals see quant improvement, 2/5 tie because model defaults already strong.",
+    "Skill delta is LARGEST when prompts have rushed/casual framing (eval-3 'production by tomorrow' broke baseline with 6 violations including 2 runtime errors).",
+    "Skill delta is SMALLEST when the bad request is obvious (eval-1 hardcode prod key) or the right pattern is a well-known idiom (eval-5 Generic/TypeVar) — model refuses/follows on its own.",
+    "QUALITATIVE wins exceed quantitative wins. Even when scan scores tie, with_skill outputs are typically more thoughtful: better separation of concerns, less typing.Any, more consistent exception chaining.",
+    "Skill occasionally over-engineers ceremony (eval-2 docstring + validation for a 'quick function'). Iteration-2 candidate: add a 'context-aware verbosity' hint to the skill."
+  ],
+  "next_iteration_candidates": [
+    "Higher-pressure prompts for evals where model already plays safe (eval-1, eval-5) — e.g., 'this is just a 10-line script, don't waste my time with TypeVar' should test whether skill holds under aggressive dismissal.",
+    "Test the simplify skill (skills/simplify/SKILL.md) on the iteration-1 BASELINE outputs to see if it catches the same over-engineering / under-engineering issues identified by hand.",
+    "Tune the skill's 'When to be defensive vs explorative' section so eval-2 quick prompts don't get 49-line responses with 14-line docstrings.",
+    "Add new rules to aidoctor that catch over-engineering itself: docstring-longer-than-fn, redundant-validation-on-trivial-fn, etc."
+  ]
+}
