@@ -4,6 +4,16 @@ Deferred items from `/plan-ceo-review` and `/plan-eng-review` (2026-05-11).
 
 ## v1.1 (post-launch, weeks 2-4)
 
+### 0. `aidoctor simplify` — three-angle review beyond static linting [P1]
+- **What:** New subcommand `aidoctor simplify [PATH]` that emits three parallel review prompts: reuse (duplicated logic, stdlib re-implementations), quality (parameter sprawl, copy-paste, nested ternaries, stringly-typed code), efficiency (N+1 patterns, missed asyncio.gather, hot-path file re-reads).
+- **Why:** Static rules are the checkup; `simplify` is the full physical. Differentiates aidoctor from ruff/pylint (static only). Inherits the proven 3-agent pattern from gstack's /simplify but Python-tuned.
+- **Shape:** 100% delegation — prints structured prompts to stdout, user pipes into Claude/Cursor/Codex/Gemini. Same model as the agent-install prompt. No API key required.
+- **Pro variant (v1.2):** `aidoctor simplify --with claude` detects the user's installed agent CLI and dispatches directly. Still no aidoctor-side LLM cost.
+- **Effort:** M (CC: ~4 hours — three prompt templates, agent-CLI detection, integration test)
+- **Priority:** P1 — strongest "wow" feature for v1.1 launch tweet.
+
+
+
 ### 1. LRU cache eviction for CST cache
 - **What:** Add bounded-size LRU eviction to `~/.cache/aidoctor/cst-cache/`. Currently grows unbounded.
 - **Why:** Big repo scans accumulate hundreds of MB. Power users will notice.
