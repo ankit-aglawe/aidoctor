@@ -11,9 +11,9 @@ All notable changes to aidoctor are documented here. Format follows [Keep a Chan
 - CLI: `aidoctor install` writes a markdown skill into Claude Code, Cursor, OpenCode, Codex, and Gemini CLI agent dirs; backs up existing files
 - CLI: `aidoctor skill --format <claude|cursor|opencode|codex|gemini|generic|raw>` prints the rendered skill to stdout for any agent without a native installer (Aider, Copilot Workspace, custom)
 - CLI: `aidoctor scan-pr <github-url>` fetches a GitHub PR's diff via httpx and scores only the changed Python files
+- Claude Code plugin: `/plugin marketplace add ankit-aglawe/aidoctor` then `/plugin install aidoctor@ankit-aglawe` — ships three model-invoked skills: `scan`, `simplify`, `python-rules`
 - Multiprocessing parallel scan via `multiprocessing.Pool(cpu_count())` for repos with >4 files
 - Score formula: `100 - unique_error_rules × 4 - unique_warning_rules × 2`, labels at 75/50
-- ASCII doctor-face rendering in rich terminal output
 - Schema-versioned JSON output (`schema_version: 1`)
 - Inline suppression: `# aidoctor: disable=rule-id`, `disable-line=`, `disable-file=`
 - GitHub Action composite at `action.yml`
