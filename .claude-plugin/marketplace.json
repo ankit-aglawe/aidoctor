@@ -10,7 +10,7 @@
     {
       "name": "aidoctor",
       "source": "./",
-      "description": "Coding harness for AI agents writing Python. 7 skills + 1 CLI catch slop at writing time, in diffs, and across whole projects. JS / Rust / Go on the roadmap.",
+      "description": "Multi-language coding harness for AI agents. v1.0 ships Python (25 rules) + React (19 rules) deep packs + LLM-only fallback for any other language. JS / Rust / Go on the roadmap.",
       "homepage": "https://github.com/ankit-aglawe/aidoctor",
       "repository": "https://github.com/ankit-aglawe/aidoctor",
       "license": "MIT",

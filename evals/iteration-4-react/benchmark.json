@@ -1,0 +1,108 @@
+{
+  "iteration": 4,
+  "date": "2026-05-11",
+  "skill_under_test": "react-rules (skills/react-rules/SKILL.md)",
+  "method": "5 React/JSX prompts, each designed to trip 1-3 specific react-rules. Spawned 10 subagents — 5 baseline (no skill) + 5 with_skill. Both wrote a .jsx file for the same task. Graded by reading the actual JSX against each rule's trap condition.",
+  "evals": [
+    {
+      "id": 1,
+      "name": "todo-list",
+      "trap_rules": ["react-key-prop-index"],
+      "lines": {"baseline": 87, "with_skill": 94},
+      "baseline_violations": [
+        {"rule_id": "react-key-prop-index", "line": 53, "evidence": "key={index} on .map of todos"}
+      ],
+      "with_skill_violations": [],
+      "delta": "+1 → 0",
+      "qual_winner": "with_skill",
+      "qual_notes": "Skill version used crypto.randomUUID stable IDs as keys, kept removal/toggle by id not index. Properly hooked up addressable state."
+    },
+    {
+      "id": 2,
+      "name": "form-validation",
+      "trap_rules": ["react-input-no-label", "react-click-non-button"],
+      "lines": {"baseline": 47, "with_skill": 78},
+      "baseline_violations": [
+        {"rule_id": "react-input-no-label", "line": 14, "evidence": "input with only placeholder, no <label>"},
+        {"rule_id": "react-input-no-label", "line": 20, "evidence": "input with only placeholder, no <label>"},
+        {"rule_id": "react-click-non-button", "line": 26, "evidence": "<div onClick={handleSubmit}> with cursor:pointer styling — should be <button>"},
+        {"rule_id": "react-commented-jsx-or-todo", "line": 8, "evidence": "bare TODO without ticket reference"}
+      ],
+      "with_skill_violations": [],
+      "delta": "+4 → 0",
+      "qual_winner": "with_skill",
+      "qual_notes": "Skill version uses real <label htmlFor>, <button type='submit'>, inline validation with early returns + aria-live alert. No bare TODO."
+    },
+    {
+      "id": 3,
+      "name": "useeffect-cleanup",
+      "trap_rules": ["react-useeffect-no-cleanup"],
+      "lines": {"baseline": 19, "with_skill": 21},
+      "baseline_violations": [
+        {"rule_id": "react-useeffect-no-cleanup", "line": 12, "evidence": "addEventListener with no return cleanup — leaks the listener"}
+      ],
+      "with_skill_violations": [],
+      "delta": "+1 → 0",
+      "qual_winner": "with_skill",
+      "qual_notes": "Skill version returns removeEventListener cleanup, SSR-safe initial state via typeof window !== 'undefined' guard, no other changes needed."
+    },
+    {
+      "id": 4,
+      "name": "context-provider",
+      "trap_rules": ["react-inline-object-prop"],
+      "lines": {"baseline": 23, "with_skill": 27},
+      "baseline_violations": [
+        {"rule_id": "react-inline-object-prop", "line": 13, "evidence": "value={{user, updateUser}} — new object reference every render, re-renders all consumers"}
+      ],
+      "with_skill_violations": [],
+      "delta": "+1 → 0",
+      "qual_winner": "with_skill",
+      "qual_notes": "Skill version uses useMemo for the value object and useCallback for updateUser. Plus added useAuth consumer hook with provider guard (bonus quality)."
+    },
+    {
+      "id": 5,
+      "name": "dangerous-html",
+      "trap_rules": ["react-dangerous-html"],
+      "lines": {"baseline": 26, "with_skill": 30},
+      "baseline_violations": [
+        {"rule_id": "react-dangerous-html", "line": 22, "evidence": "dangerouslySetInnerHTML with comment.html (user-submitted) — no sanitization"}
+      ],
+      "with_skill_violations": [],
+      "delta": "+1 → 0",
+      "qual_winner": "with_skill",
+      "qual_notes": "Skill version sanitizes via DOMPurify client-side (belt-and-suspenders even when backend claims to sanitize). Added explicit aidoctor: disable comment with reason. Tightened DOMPurify config to forbid script/style/iframe/inline event handlers."
+    }
+  ],
+  "summary": {
+    "total_baseline_violations": 8,
+    "total_with_skill_violations": 0,
+    "evals_with_skill_improvement": 5,
+    "evals_tied": 0,
+    "evals_regressed": 0,
+    "false_positive_rate": 0
+  },
+  "headline_findings": [
+    "react-rules cleared the validation gate: 5/5 evals improved, 0 regressions, 0 false positives. Baselines tripped 8 total violations; with_skill caught all 8.",
+    "Most insidious trap (eval-3 useeffect-no-cleanup): baseline included no return statement at all. The 'no cleanup needed since component lives forever' framing fooled the model. Skill version refused.",
+    "Most subtle trap (eval-4 inline object): baseline did exactly what the prompt asked. Skill recognized the performance pattern and wrapped in useMemo+useCallback.",
+    "Most security-critical trap (eval-5 XSS): baseline included a comment acknowledging the XSS risk but still wrote the vulnerable code. Skill enforced sanitization despite backend's claim of pre-sanitization.",
+    "Average line delta: +5 lines per file with_skill vs baseline. The skill's cost is modest verbosity, the payoff is correctness."
+  ],
+  "what_this_validates": [
+    "The skill-pack-first architecture works: pure-prose rules + LLM judgment catch real bugs without any AST/parser machinery.",
+    "react-doctor's category framework (state & effects, performance, architecture, security, accessibility, dead code) maps cleanly to AI-slop rules.",
+    "The python-rules template (Iron Law + pre-flight + anti-rationalization + rules with DO/DON'T + pre-emit checklist) is portable to other languages.",
+    "Subagents with the skill loaded resist explicit framing pressure ('just make it work', 'no cleanup needed') as effectively as the python-rules subagents did in iteration-1."
+  ],
+  "limitations": [
+    "5 evals is small N. Should expand to 10-15 prompts for v1.0 hardening, covering more rule categories (accessibility-deep, performance-deep, architecture-deep).",
+    "react-doctor's actual rule list was not fetched in time — our rules are curated from React community knowledge with attribution to react-doctor's category framework. May miss some rules they cover.",
+    "No tree-sitter verification — the rules live entirely in SKILL.md prose. Future v2.0 with tree-sitter would add deterministic verification on top of the LLM-applied skill."
+  ],
+  "next_steps": [
+    "Cross-check against react-doctor's actual rule list (research agent results pending).",
+    "Expand corpus to 10-15 prompts for v1.0 hardening (deferred).",
+    "Build js-rules SKILL using the same template (v1.1).",
+    "Build rust-rules and go-rules (v1.2, v1.3)."
+  ]
+}

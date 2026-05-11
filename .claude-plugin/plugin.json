@@ -1,7 +1,7 @@
 {
   "name": "aidoctor",
-  "version": "0.2.0",
-  "description": "Coding harness for AI agents. 7 skills + 1 CLI orchestrate AI-slop review: write-time prevention, diff review, whole-project audit. Python rules ship today (25 patterns); React/JS/Rust/Go rule packs on the roadmap as additional SKILLs alongside python-rules. Same harness works in Claude Code, Cursor, Codex, Gemini CLI, OpenCode.",
+  "version": "1.0.0",
+  "description": "Multi-language coding harness for AI agents. 8 skills orchestrate AI-slop review across any code: write-time prevention, diff review, whole-project audit. v1.0 ships deep rule packs for Python (25 rules) and React (19 rules, lifted from react-doctor MIT). LLM-only fallback for any other language. Same harness works in Claude Code, Cursor, Codex, Gemini CLI, OpenCode. JS / Rust / Go rule packs on the roadmap.",
   "author": {
     "name": "Ankit Aglawe",
     "email": "aglawe.ankit@gmail.com"

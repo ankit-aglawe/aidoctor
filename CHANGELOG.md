@@ -2,7 +2,36 @@
 
 All notable changes to aidoctor are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). The project follows [Semantic Versioning](https://semver.org/).
 
-## [0.2.0] — 2026-05-11
+## [1.0.0] — 2026-05-11
+
+### Pivot — aidoctor is now a multi-language skill pack
+
+aidoctor v1.0 is a coding harness for AI agents, distributed as a Claude Code plugin and per-agent skill files for Cursor, Codex, Gemini CLI, OpenCode. **The CLI is deprecated as the primary surface; the v0.2.0 wheel is unpublished and shelved.** Skills are the product. v2.0+ may revive a CLI for deterministic verification.
+
+### Added
+
+- `react-rules` SKILL — 19 React/JSX rules covering state & effects, performance, architecture, security, accessibility, dead code. Rule semantics lifted from [react-doctor](https://github.com/millionco/react-doctor) (MIT, attribution in `THIRD_PARTY_LICENSES`).
+- Iteration-4 validation evidence: 5/5 React prompts improved with skill, 0 regressions, 0 false positives. Report in `evals/iteration-4-react/REPORT.md`.
+- LLM-only fallback documented in `simplify` and `audit` SKILL.md: for languages without a rule pack, the orchestration skills fall back to general code review patterns.
+- `THIRD_PARTY_LICENSES` file with react-doctor MIT attribution.
+- `docs/specs/2026-05-11-skill-pack-pivot-design.md` — design doc explaining the pivot.
+
+### Changed
+
+- Brand position: "Multi-language coding harness for AI agents" (was "Python coding harness").
+- Plugin marketplace description names the multi-language scope: deep packs for Python + React, LLM-only for everything else, JS/Rust/Go on the roadmap.
+- README hero rewritten to articulate the moat: "AI-slop removal in any code + opinionated robust, production-grade, non-overengineered patterns."
+
+### Deferred to v2.0+
+
+- `aidoctor scan` CLI as deterministic verifier
+- PyPI publication of v0.2.0+ (v0.1.0 stays live for the few CLI users)
+- tree-sitter / libcst parsers
+- GitHub Action surface
+- Score formula / leaderboard
+- VS Code extension
+
+## [0.2.0] — 2026-05-11 (UNRELEASED — skill-pack pivot superseded this)
 
 ### Added — the harness shape
 

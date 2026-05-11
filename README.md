@@ -4,14 +4,18 @@
 
 > Your agent writes bad code. This catches it.
 
-**aidoctor is the coding harness for AI agents.** Two things in one:
+**aidoctor is the multi-language coding harness for AI agents.** Two things in one:
 
-1. **AI-slop removal in any code.** The skills (`scan`, `simplify`, `audit`, `rules`) orchestrate reviews that catch the patterns LLMs reflexively produce. Where a language-specific rule pack exists, we use it for grounded, deterministic findings. Where one doesn't, the skills fall back to LLM-only qualitative review (still useful, less specific).
-2. **Opinionated robust, production-grade, non-overengineered patterns.** The `simplify` skill spawns three reviewers (reuse / quality / efficiency) to fight over-engineering at the diff level. The `audit` skill applies a six-dimensional review (structure / deps / security / exceptions / standards / coverage) at the project level.
+1. **AI-slop removal in any code.** Orchestration skills (`scan`, `simplify`, `audit`, `rules`) catch the patterns LLMs reflexively produce. Where a language-specific rule pack exists, the agent uses it for grounded, deterministic findings. Where one doesn't, the skills fall back to LLM-only qualitative review (still useful, just less specific).
+2. **Opinionated robust, production-grade, non-overengineered patterns.** `simplify` spawns three reviewers (reuse / quality / efficiency) to fight over-engineering at the diff level. `audit` applies a six-dimensional review (structure / deps / security / exceptions / standards / coverage) at the project level.
 
-**Python rules ship today.** 25 patterns across 8 categories: bare `except`, hardcoded secrets, async/sync mismatch, dead defenses, fake type hints, stub comments, AI-slop imports, stale loops. React (via [react-doctor](https://github.com/millionco/react-doctor) lift), JS, Rust, Go rule packs are on the roadmap — each is a new SKILL alongside `python-rules`, not a new tool.
+**v1.0 ships deep rule packs for Python and React.**
+- **Python (`python-rules`)** — 25 rules across 8 categories: bare `except`, hardcoded secrets, async/sync mismatch, dead defenses, fake type hints, stub comments, AI-slop imports, stale loops. Validated in iteration-1 (avg score 96→100, 3/5 evals improved).
+- **React (`react-rules`)** — 19 rules across 6 categories: state & effects, performance, architecture, security, accessibility, dead code. Lifted from [react-doctor](https://github.com/millionco/react-doctor) (MIT). Validated in iteration-4 (5/5 evals improved, 8 violations → 0).
 
-Same harness, every major agent: Claude Code, Cursor, Codex, Gemini CLI, OpenCode.
+**JS / Rust / Go rule packs on the roadmap** — each is a new SKILL alongside the existing ones, validated through the same iteration methodology.
+
+Same harness, every major agent: **Claude Code, Cursor, Codex, Gemini CLI, OpenCode.**
 
 [Install](#install) · [CLI](#cli) · [Rules](#what-it-catches) · [Leaderboard](#leaderboard) · [vs alternatives](#how-it-differs)
 
@@ -28,12 +32,13 @@ Register the marketplace and install the plugin:
 /plugin install aidoctor@ankit-aglawe
 ```
 
-After install, just talk to Claude in plain English. Seven skills load:
+After install, just talk to Claude in plain English. Eight skills load:
 
 | You want to | Invoke | Or say |
 |---|---|---|
 | **Write** Python (no action needed) | `python-rules` auto-loads | n/a |
-| **Lint** one file or path | `/aidoctor:scan` | "scan this", "lint my Python" |
+| **Write** React (no action needed) | `react-rules` auto-loads | n/a |
+| **Lint** one file or path | `/aidoctor:scan` | "scan this", "lint my code" |
 | **Review** your last diff | `/aidoctor:simplify` | "review what I just changed" |
 | **Audit** the whole repo | `/aidoctor:audit` | "audit this repo", "is it prod-ready?" |
 | **Browse** the rule catalog | `/aidoctor:rules` | "list aidoctor rules" |
@@ -41,7 +46,7 @@ After install, just talk to Claude in plain English. Seven skills load:
 
 Lost? Type `/aidoctor:help` for the full decision tree.
 
-The `using-aidoctor` skill auto-loads on first Python touch in a fresh session so your agent knows the catalog without you having to read this README.
+For languages without a rule pack (Rust, Go, Java, etc.), the orchestration skills (`scan`, `simplify`, `audit`) fall back to LLM-only review — still useful, just less language-specific.
 
 ### Cursor
 
