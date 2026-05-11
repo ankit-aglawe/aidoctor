@@ -1,0 +1,119 @@
+{
+  "iteration": 2,
+  "date": "2026-05-11",
+  "skill_under_test": "simplify (skills/simplify/SKILL.md)",
+  "method": "For each of 5 iteration-1 BASELINE outputs, spawn one subagent that loads the simplify skill and applies its three-angle review framework (reuse / quality / efficiency) to the entire file. Compare findings vs the ground truth identified by hand in iteration-1's REPORT.md.",
+  "evals": [
+    {
+      "id": 1,
+      "name": "fastapi-auth-baseline-review",
+      "hand_findings": 1,
+      "hand_findings_summary": "verbose but technically correct; no specific bugs flagged",
+      "simplify_findings": 21,
+      "simplify_findings_breakdown": {"reuse": 6, "quality": 10, "efficiency": 5},
+      "caught_hand_findings": true,
+      "went_deeper": true,
+      "highlight_finds_beyond_hand_review": [
+        "Per-request httpx.AsyncClient (should be shared via FastAPI lifespan) — real performance issue",
+        "3 identical 401 raises + 2 identical 502 raises → consolidate into helper functions",
+        "Missing `from exc` on 6 re-raises (broken exception chains lose original traceback)",
+        "tuple[str, int] return from _issue_jwt is parameter sprawl",
+        "_require_config re-reading module globals smells",
+        "Unvalidated int() env cast crashes at first request, not at config load"
+      ],
+      "decision_brief_quality": "Recommended Option A — 7 consensus items only. Skipped single-reviewer opinion calls. Right calibration."
+    },
+    {
+      "id": 2,
+      "name": "data-cleaning-baseline-review",
+      "hand_findings": 2,
+      "hand_findings_summary": "df.iterrows() loop + df.drop(indices) mutation",
+      "simplify_findings": 5,
+      "caught_hand_findings": true,
+      "went_deeper": true,
+      "highlight_finds_beyond_hand_review": [
+        "Magic '90' should be parameterized",
+        "Naive datetime.now() vs tz-aware concern flagged but correctly deferred to Option B (needs caller context)",
+        "Testability: injectable clock for unit tests"
+      ],
+      "decision_brief_quality": "Recommended Option A — vectorized fix only. Surfaced testability + tz concerns as Option B without forcing them. Right calibration."
+    },
+    {
+      "id": 3,
+      "name": "async-cache-baseline-review",
+      "hand_findings": 3,
+      "hand_findings_summary": "sync requests.get in async, time.sleep blocks event loop, asyncio.run inside async fn",
+      "simplify_findings": 12,
+      "caught_hand_findings": true,
+      "went_deeper": true,
+      "highlight_finds_beyond_hand_review": [
+        "Thundering herd: no in-flight Task dedup — N concurrent requests for same URL all hit upstream",
+        "Unbounded cache growth: no eviction policy",
+        "Constant backoff with no jitter — synchronizes retry storms",
+        "No connection pooling without shared httpx.AsyncClient",
+        "Suggested industry-standard alternatives: tenacity for retries, async_lru.alru_cache for caching"
+      ],
+      "decision_brief_quality": "Recommended Option B (full rewrite) over Option A (surgical patch) because the function is broken at runtime and a surgical fix leaves an async fn that still blocks the loop. Correct judgment."
+    },
+    {
+      "id": 4,
+      "name": "stub-todo-baseline-review",
+      "hand_findings": 1,
+      "hand_findings_summary": "redundant TODO comments alongside NotImplementedError",
+      "simplify_findings": 6,
+      "caught_hand_findings": true,
+      "went_deeper": true,
+      "highlight_finds_beyond_hand_review": [
+        "Return type should be NoReturn not None — functions that always raise have semantic meaning",
+        "`from __future__ import annotations` is dead — no forward references in this file",
+        "Hardcoded function name in error message is rename-unsafe (traceback already names the function)",
+        "Correctly REJECTED extracting a _stub() helper as YAGNI at N=2 — didn't manufacture an abstraction"
+      ],
+      "decision_brief_quality": "Recommended Option A — consensus items + cheap one-liners. Skipped speculative refactoring. Right calibration."
+    },
+    {
+      "id": 5,
+      "name": "type-safe-cache-baseline-review",
+      "hand_findings": 0,
+      "hand_findings_summary": "model defaults handled the prompt correctly; nothing to flag",
+      "simplify_findings": 0,
+      "caught_hand_findings": true,
+      "went_deeper": false,
+      "decision_brief_quality": "Recommended SKIP — explicitly cited Phase 5 of the skill ('If the code was already clean, say so — don't manufacture findings'). No false positives."
+    }
+  ],
+  "summary": {
+    "total_hand_findings_across_5_evals": 7,
+    "total_simplify_findings_across_5_evals": 44,
+    "evals_where_simplify_caught_hand_findings": 5,
+    "evals_where_simplify_went_deeper": 4,
+    "evals_where_simplify_correctly_returned_no_findings": 1,
+    "false_positive_rate": 0,
+    "missed_bugs": 0
+  },
+  "headline_findings": [
+    "The simplify skill catches every bug we found by hand AND surfaces 6.3× more findings on average (44 simplify vs 7 hand-found).",
+    "Eval-3 (the file with 3 runtime bugs) was the critical test. Simplify caught all 3 PLUS flagged 4 production concerns (thundering herd, unbounded growth, no jitter, no connection pooling) and proposed industry-standard libraries (tenacity, async_lru).",
+    "Eval-5 (already-clean code) correctly returned ZERO findings — the skill honored its Phase 5 'don't manufacture findings' rule. No false positives.",
+    "Decision-brief calibration is excellent. 4/5 reviews recommended Option A (consensus-only) which kept fixes tight. Eval-3 correctly escalated to Option B (full rewrite) because the function is broken at runtime.",
+    "Single-reviewer findings (judgment calls) were surfaced as Option B but not forced — exactly the skill's intended behavior for taste calls."
+  ],
+  "comparison_to_iteration_1": {
+    "iteration_1_question": "Does the python-rules skill prevent slop at generation time?",
+    "iteration_1_answer": "Yes — avg score 96 → 100, 3/5 evals improved.",
+    "iteration_2_question": "Does the simplify skill catch slop AFTER it's been generated?",
+    "iteration_2_answer": "Yes — caught 100% of hand-found bugs + 6.3× more nuanced findings, with zero false positives on already-clean code."
+  },
+  "what_this_validates": [
+    "The TWO-LAYER architecture works: python-rules prevents at the source, simplify catches what slips through.",
+    "The LLM-intelligent layer (simplify) is substantively MORE thorough than rule-based detection — it catches design issues (thundering herd, connection pooling, NoReturn semantics) that no static lint rule can express.",
+    "The skill's decision-brief format produces well-calibrated recommendations — neither under-flagging (missed eval-3's runtime bug) nor over-flagging (eval-5 correctly skipped).",
+    "Phase 5's 'don't manufacture findings' rule is respected in practice — eval-5 returned cleanly."
+  ],
+  "limitations": [
+    "Single-pass review on each file — we didn't test the iterative 'fix → re-scan → re-review' loop the skill describes.",
+    "Subagents applied the three angles sequentially in-process rather than spawning real parallel Task subagents (we said 'don't spawn sub-subagents' to keep the test tractable). Production use of /aidoctor:simplify in Claude Code would spawn 3 parallel reviewers per the skill's Phase 2.",
+    "5 evals is a small N. A larger corpus (50-100 real-world Python files) would give more confidence in the false-positive rate.",
+    "We tested simplify on iteration-1 BASELINES (intentionally lower-quality code). Should also test on already-good code to confirm the 'no manufactured findings' behavior holds across diverse inputs."
+  ]
+}
