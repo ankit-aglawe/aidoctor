@@ -26,11 +26,30 @@ from aidoctor.scan import ScanResult
 BRAND_COLOR = "bright_cyan"
 BRAND_DIM = "cyan"
 
-# Single-color brand mark. "Ownable" brand identity like Claude's amber.
+# Cyan brand. "Ownable" identity like Claude's amber.
 AI_COLOR = "bright_cyan"
 AI_DIM = "cyan"
 DOCTOR_COLOR = "bright_cyan"
 DOCTOR_DIM = "cyan"
+
+# Per-row cyan gradient for the brand banner. Translated from
+# vercel-labs/skills' GRAYS pattern (255→238) into our cyan palette.
+# Lightest at the top, peak bright_cyan at the AI/DOCTOR transition,
+# fading to deep teal at the bottom. 12 values for 12 banner rows.
+BANNER_GRADIENT = [
+    "color(195)",  # ice-pale
+    "color(159)",
+    "color(123)",
+    "color(87)",
+    "color(51)",
+    "color(51)",   # AI bottom — peak
+    "color(45)",   # DOCTOR top
+    "color(45)",
+    "color(39)",
+    "color(38)",
+    "color(31)",
+    "color(30)",   # deepest teal
+]
 
 # ANSI Shadow style. Both lines left-aligned at the same column.
 BANNER_AI = r"""  █████╗ ██╗
@@ -93,20 +112,27 @@ def score_bar(score: Score, width: int = 50) -> Text:
 
 
 def render_banner(console: Console) -> None:
-    """Render the AI Doctor brand banner — mono cyan, ANSI Shadow blocks."""
+    """Render the AI Doctor brand banner — cyan gradient ANSI Shadow.
+
+    Each row of the banner is painted a slightly different shade of cyan, going
+    from ice-pale at the top to deep teal at the bottom. Lifts the per-row
+    gradient pattern from vercel-labs/skills, translated into our brand palette.
+    """
     banner = Text()
     banner.append("\n")
-    banner.append(BANNER_AI, style=f"bold {AI_COLOR}")
-    banner.append("\n")
-    banner.append(BANNER_DOCTOR, style=f"bold {DOCTOR_COLOR}")
-    banner.append("\n\n  ")
-    banner.append(f"v{__version__}", style=DOCTOR_DIM)
+    all_lines = BANNER_AI.split("\n") + BANNER_DOCTOR.split("\n")
+    for i, line in enumerate(all_lines):
+        shade = BANNER_GRADIENT[i] if i < len(BANNER_GRADIENT) else BANNER_GRADIENT[-1]
+        banner.append(line, style=f"bold {shade}")
+        banner.append("\n")
+    banner.append("\n  ")
+    banner.append(f"v{__version__}", style="color(45) dim")
     banner.append("  ·  ", style="dim")
-    banner.append("Better Python from your AI assistant.", style=DOCTOR_DIM)
+    banner.append("Better Python from your AI assistant.", style="color(45) dim")
     console.print(
         Panel(
             banner,
-            border_style=DOCTOR_COLOR,
+            border_style="color(51)",
             expand=False,
             padding=(0, 1),
         )
