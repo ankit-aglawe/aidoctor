@@ -1,0 +1,28 @@
+# Per-platform skill installer config.
+# Each entry: filename + path under $HOME where the skill markdown lands.
+# Note: file format quirks per platform live in `template.md.j2` via Jinja2 conditionals.
+
+[claude]
+display_name = "Claude Code"
+path = ".claude/skills/aidoctor/SKILL.md"
+format = "claude"
+
+[cursor]
+display_name = "Cursor"
+path = ".cursor/rules/aidoctor.mdc"
+format = "cursor"
+
+[opencode]
+display_name = "OpenCode"
+path = ".config/opencode/rules/aidoctor.md"
+format = "opencode"
+
+[codex]
+display_name = "Codex (OpenAI)"
+path = ".codex/rules/aidoctor.md"
+format = "codex"
+
+[gemini]
+display_name = "Gemini CLI"
+path = ".gemini/rules/aidoctor.md"
+format = "gemini"

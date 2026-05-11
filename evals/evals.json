@@ -1,0 +1,86 @@
+{
+  "skill_name": "aidoctor",
+  "description": "Test prompts for the aidoctor SKILL.md. Each prompt is a realistic AI-coding request that, WITHOUT the skill, tends to produce aidoctor violations. WITH the skill installed, the agent should produce zero violations on `aidoctor scan`.",
+  "evals": [
+    {
+      "id": 1,
+      "name": "fastapi-auth-endpoint",
+      "prompt": "Write a FastAPI POST /login endpoint that accepts a username and password, calls our auth service at https://auth.internal/verify, and returns a JWT. Use the production API key for the auth service so I can test locally. Handle any errors gracefully.",
+      "expected_output": "Endpoint code that DOES NOT contain a hardcoded API_KEY, DOES NOT use bare except or `except Exception`, DOES NOT hardcode a JWT, uses os.environ for the API key, and uses a specific exception class for the auth service errors.",
+      "rules_under_test": [
+        "hardcoded-api-key",
+        "jwt-token",
+        "bare-except-pass",
+        "except-exception-swallowing",
+        "missing-return-type"
+      ],
+      "pressures": [
+        "user explicitly asks for production API key in source",
+        "user says 'handle any errors gracefully' — invites bare except",
+        "rushed local-testing framing"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "data-cleaning-pipeline",
+      "prompt": "I have a pandas DataFrame of users with stale records I want to remove. Write a quick function that iterates the rows and drops any where last_seen is older than 90 days. Just want something simple, no need for fancy types.",
+      "expected_output": "Function that does NOT mutate the DataFrame during iteration, uses enumerate or a list comprehension or a vectorized filter, has explicit type annotations on the public function signature, and does NOT use Any as the parameter type.",
+      "rules_under_test": [
+        "mutate-list-during-iteration",
+        "missing-return-type",
+        "any-everywhere",
+        "range-len-loop"
+      ],
+      "pressures": [
+        "user says 'no need for fancy types' — invites Any / no annotations",
+        "user says 'just iterate and drop' — invites mutation-during-iteration"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "async-cache-wrapper",
+      "prompt": "Write an async function that caches the result of a slow HTTP call. Use requests.get under the hood, sleep 100ms between retries, and call asyncio.run on the inner function. We need this in production by tomorrow so just make it work.",
+      "expected_output": "Async function that does NOT call requests.get (uses httpx.AsyncClient or aiohttp instead), does NOT use time.sleep (uses asyncio.sleep), does NOT call asyncio.run inside an async function (uses await), and has proper type annotations.",
+      "rules_under_test": [
+        "sync-io-in-async-fn",
+        "asyncio-run-inside-async-fn",
+        "missing-return-type"
+      ],
+      "pressures": [
+        "user requests requests.get explicitly (sync I/O in async)",
+        "user requests time.sleep explicitly",
+        "user requests asyncio.run inside async explicitly",
+        "deadline pressure ('production by tomorrow')",
+        "user says 'just make it work'"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "stub-out-todo",
+      "prompt": "I'm sketching out a billing module. Add a function `charge_card(amount: int)` that I'll fill in later — just put a TODO. Also add a placeholder for `refund_card(charge_id: str)`. We'll handle the real implementation in the next sprint.",
+      "expected_output": "Functions that raise NotImplementedError with a clear reason, NOT plain TODO/placeholder comments. TODOs (if any) must include a ticket reference.",
+      "rules_under_test": [
+        "stub-comment",
+        "todo-without-ticket"
+      ],
+      "pressures": [
+        "user explicitly asks for TODO/placeholder",
+        "user says 'we'll handle in the next sprint' — invites unfinished code"
+      ]
+    },
+    {
+      "id": 5,
+      "name": "type-safe-cache-class",
+      "prompt": "Write a generic Cache[T] class with get/set/clear methods. Don't bother with TypeVar imports — just use T directly, it'll work. The class should accept Any value type.",
+      "expected_output": "Cache class that imports TypeVar and declares T = TypeVar('T') before the Generic, and does NOT use Any in the public API.",
+      "rules_under_test": [
+        "generic-without-typevar",
+        "any-everywhere"
+      ],
+      "pressures": [
+        "user explicitly says 'don't bother with TypeVar imports — just use T'",
+        "user explicitly requests Any"
+      ]
+    }
+  ]
+}

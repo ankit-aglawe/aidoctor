@@ -1,0 +1,43 @@
+# aidoctor public leaderboard — opt-in only.
+#
+# To add your repository to the leaderboard:
+#   1. Open a PR against this file.
+#   2. Add an entry under `repos:` with: owner, name, ref (or "HEAD"), paths.
+#   3. Maintainer-status verification: include a link in the PR description
+#      proving you maintain the repo (commit history, README author, etc.).
+#
+# To remove your repository:
+#   - Open an issue or PR removing your entry. We act within 24h.
+#
+# Pre-launch the list is intentionally tiny. Maintainer buy-in must be
+# documented in `.maintainer-acks/` before any famous-repo entry lands.
+
+schema_version: 1
+
+repos:
+  # Seed entries — aidoctor scoring itself, no maintainer outreach needed.
+  - owner: aidoctor
+    name: aidoctor
+    ref: HEAD
+    paths: src
+
+# Pre-launch targets (15 famous Python repos). Each must have an
+# explicit maintainer ack file at .maintainer-acks/<owner>-<name>.md
+# BEFORE being added below.
+#
+# Candidate list (do NOT enable without ack):
+#   - encode/httpx                  # HTTP client
+#   - tiangolo/fastapi              # web framework
+#   - pallets/flask                 # web framework
+#   - pydantic/pydantic             # data validation
+#   - python-poetry/poetry          # packaging
+#   - astral-sh/uv                  # packaging
+#   - psf/requests                  # HTTP (legacy)
+#   - pytest-dev/pytest             # test framework
+#   - rust-lang/triagebot           # python-heavy bot
+#   - sphinx-doc/sphinx             # docs generator
+#   - jcrist/msgspec                # serialization
+#   - hynek/structlog               # logging
+#   - jd/tenacity                   # retry library
+#   - mahmoud/boltons               # stdlib extensions
+#   - ipython/ipython               # interactive shell

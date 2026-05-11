@@ -1,0 +1,21 @@
+- id: aidoctor
+  name: aidoctor
+  description: Catch AI-slop Python patterns.
+  entry: aidoctor scan
+  args: ["--diff", "--staged", "--fail-on", "error"]
+  language: python
+  language_version: python3
+  types: [python]
+  pass_filenames: false
+  require_serial: false
+
+- id: aidoctor-full
+  name: aidoctor (full scan)
+  description: Catch AI-slop Python patterns across the entire repo (slower).
+  entry: aidoctor scan
+  args: ["--fail-on", "error"]
+  language: python
+  language_version: python3
+  types: [python]
+  pass_filenames: false
+  require_serial: false

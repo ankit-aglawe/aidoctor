@@ -1,0 +1,242 @@
+---
+name: aidoctor
+description: Use when writing, editing, or refactoring Python code, especially when the code is AI-generated. Triggers on potential hardcoded secrets, bare excepts, wildcard imports, stub comments like "# implement this", TODOs without ticket references, range(len) loops, list mutation during iteration, JWT or AWS credentials, missing type annotations, asyncio.run inside async, or any defensive code that swallows real errors.
+version: {{ aidoctor_version }}
+author: aidoctor
+license: MIT
+metadata:
+  aidoctor:
+    skill_version: 2
+    last_updated: {{ today }}
+    rule_count: {{ rule_count }}
+    categories: {{ categories | tojson }}
+related_skills: []
+---
+{# DO/DON'T snippets keyed by rule_id. Curated in-template so rule code stays small. #}
+{%- set examples = {
+  "wildcard-import": {
+    "dont": "from os import *\n\ncwd = getcwd()  # where did this name come from?",
+    "do":   "from os import getcwd, environ\n\ncwd = getcwd()"
+  },
+  "duplicate-import": {
+    "dont": "import json\nfrom typing import Any\nimport json  # duplicate",
+    "do":   "import json\nfrom typing import Any"
+  },
+  "conditional-import-outside-try": {
+    "dont": "import sys\nif sys.version_info < (3, 11):\n    import tomli as tomllib\nelse:\n    import tomllib",
+    "do":   "try:\n    import tomllib\nexcept ImportError:\n    import tomli as tomllib  # py<3.11"
+  },
+  "import-without-use": {
+    "dont": "import json\nimport os\n\ndef cwd() -> str:\n    return os.getcwd()  # json is never used",
+    "do":   "import os\n\ndef cwd() -> str:\n    return os.getcwd()"
+  },
+  "bare-except-pass": {
+    "dont": "try:\n    payload = json.loads(raw)\nexcept Exception:\n    pass  # 'just in case' — silently eats real bugs",
+    "do":   "try:\n    payload = json.loads(raw)\nexcept json.JSONDecodeError as exc:\n    logger.warning(\"bad payload: %s\", exc)\n    payload = {}"
+  },
+  "except-exception-swallowing": {
+    "dont": "try:\n    result = call_api()\nexcept Exception as exc:\n    logger.error(\"failed: %s\", exc)\n    # logged, but caller silently gets None — they think it worked",
+    "do":   "try:\n    result = call_api()\nexcept requests.HTTPError as exc:\n    logger.error(\"api failed: %s\", exc)\n    raise"
+  },
+  "unreachable-raise": {
+    "dont": "def parse(raw: str) -> dict:\n    return json.loads(raw)\n    raise ValueError(\"bad input\")  # never runs",
+    "do":   "def parse(raw: str) -> dict:\n    if not raw:\n        raise ValueError(\"empty input\")\n    return json.loads(raw)"
+  },
+  "redundant-null-check-after-isinstance": {
+    "dont": "if x is not None and isinstance(x, int):\n    return x + 1",
+    "do":   "if isinstance(x, int):  # isinstance(None, int) is already False\n    return x + 1"
+  },
+  "hardcoded-api-key": {
+    "dont": "API_KEY = \"sk-proj-9f8e7d6c5b4a3210\"  # 'I'll move it later' — you won't",
+    "do":   "import os\nAPI_KEY = os.environ[\"OPENAI_API_KEY\"]"
+  },
+  "aws-credentials": {
+    "dont": "AWS_ACCESS_KEY = \"AKIAIOSFODNN7EXAMPLE\"",
+    "do":   "# Use an IAM role, or read from env / AWS secret manager.\nimport boto3\nclient = boto3.client(\"s3\")  # picks up role/env automatically"
+  },
+  "jwt-token": {
+    "dont": "AUTH = \"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NSJ9.dummysignature1234\"",
+    "do":   "import os\nAUTH = os.environ[\"SERVICE_JWT\"]"
+  },
+  "range-len-loop": {
+    "dont": "for i in range(len(items)):\n    print(i, items[i])",
+    "do":   "for i, item in enumerate(items):\n    print(i, item)"
+  },
+  "mutate-list-during-iteration": {
+    "dont": "for item in items:\n    if item.stale:\n        items.remove(item)  # iterator skips the next element",
+    "do":   "items = [item for item in items if not item.stale]"
+  },
+  "time-sleep-in-test": {
+    "dont": "def test_eventual_consistency():\n    publish(event)\n    time.sleep(2)  # slow, flaky, and hides the real timing bug\n    assert store.has(event.id)",
+    "do":   "def test_eventual_consistency():\n    publish(event)\n    wait_until(lambda: store.has(event.id), timeout=2)"
+  },
+  "todo-without-ticket": {
+    "dont": "# TODO: handle pagination  # you will forget. it will rot.",
+    "do":   "# TODO(GH-123): handle pagination once the API supports cursors"
+  },
+  "stub-comment": {
+    "dont": "def charge_card(amount: int) -> None:\n    # implement this  # ships as a silent no-op",
+    "do":   "def charge_card(amount: int) -> None:\n    raise NotImplementedError(\"charge_card pending PSP integration\")"
+  },
+  "sync-io-in-async-fn": {
+    "dont": "async def fetch_user(id: int) -> dict:\n    time.sleep(1)  # blocks the entire event loop\n    return requests.get(f\"/users/{id}\").json()",
+    "do":   "async def fetch_user(id: int) -> dict:\n    await asyncio.sleep(1)\n    async with httpx.AsyncClient() as client:\n        r = await client.get(f\"/users/{id}\")\n        return r.json()"
+  },
+  "asyncio-run-inside-async-fn": {
+    "dont": "async def orchestrate():\n    asyncio.run(do_work())  # RuntimeError: loop already running",
+    "do":   "async def orchestrate():\n    await do_work()  # or: asyncio.create_task(do_work())"
+  },
+  "blocking-call-in-event-loop": {
+    "dont": "async def main():\n    result = legacy_lib.fetch_blocking()",
+    "do":   "async def main():\n    result = await asyncio.to_thread(legacy_lib.fetch_blocking)"
+  },
+  "any-everywhere": {
+    "dont": "def process(data: Any) -> Any:  # 'I'm not sure of the type' — figure it out\n    return data[\"value\"]",
+    "do":   "def process(data: dict[str, int]) -> int:\n    return data[\"value\"]"
+  },
+  "missing-return-type": {
+    "dont": "def total(items):\n    return sum(items)",
+    "do":   "def total(items: list[int]) -> int:\n    return sum(items)"
+  },
+  "generic-without-typevar": {
+    "dont": "class Cache(Generic[T]):  # T is undefined\n    ...",
+    "do":   "from typing import Generic, TypeVar\n\nT = TypeVar(\"T\")\n\nclass Cache(Generic[T]):\n    ..."
+  },
+  "nested-loop-append": {
+    "dont": "result = []\nfor x in xs:\n    for y in ys:\n        result.append(combine(x, y))",
+    "do":   "result = [combine(x, y) for x in xs for y in ys]"
+  },
+  "str-concat-in-loop": {
+    "dont": "out = \"\"\nfor row in rows:\n    out += row + \"\\n\"  # O(N^2)",
+    "do":   "out = \"\\n\".join(rows)  # one allocation"
+  },
+  "repeated-dict-lookup": {
+    "dont": "def normalize(config: dict) -> None:\n    config[\"host\"] = config[\"host\"].lower()\n    if config[\"host\"] == \"localhost\":\n        config[\"host\"] = \"127.0.0.1\"",
+    "do":   "def normalize(config: dict) -> None:\n    host = config[\"host\"].lower()\n    if host == \"localhost\":\n        host = \"127.0.0.1\"\n    config[\"host\"] = host"
+  }
+} -%}
+{# Ordered by what hurts most if it ships. Secrets first, dead defenses second. #}
+{%- set category_priority = ["secrets", "dead-defenses", "decay", "async-mismatch", "imports", "loops", "perf", "type-hints"] -%}
+
+# aidoctor
+
+## Overview
+
+Rules tuned for AI-generated Python. Output must pass `aidoctor scan` with zero violations on the first try — not after a fix-up pass. Look up any rule with `aidoctor scan --explain <rule_id>`.
+
+## When to use
+
+Every Python file you generate, edit, or refactor. **No exceptions for "small" changes, tests, or "throwaway" scripts.** Secrets, bare excepts, and stub comments leak through all three.
+
+## Read this BEFORE you type a single line of Python
+
+A 30-second pre-flight that prevents most violations:
+
+1. **Secrets**: if you are about to write a string longer than 12 chars assigned to a name like `KEY`, `TOKEN`, `SECRET`, `PASSWORD`, `AUTH`, or starting with `AKIA`/`ASIA`/`eyJ` — **STOP**. Use `os.environ[...]` instead. There is no "test value" that is safe; rename the variable or shorten it below 12 chars.
+2. **Error handling**: if you are about to write `try:`, decide the specific exception **first**. Never type `except Exception` or bare `except:` as a placeholder.
+3. **Types**: if you don't know the type, **find out**. Read the call sites. Do not type `Any` as a synonym for "I'm not sure."
+4. **Unfinished work**: if the implementation isn't done, write `raise NotImplementedError("reason")`. Do not write `# implement this`, `# TODO: fill in`, or return a dummy value.
+5. **Iteration**: writing `for i in range(len(...))`? Use `enumerate`. Mutating a list while iterating it? Build a new list.
+
+If all five are clear, continue. If any is unclear, resolve it before generating code.
+
+## Anti-rationalization
+
+The following internal monologues all produce violations. Recognize them and stop:
+
+- *"For now I'll just hardcode this and move it later"* — you won't. Use `os.environ` now.
+- *"I'll add a TODO to come back to this"* — bare `# TODO` rots. Attach a ticket (`GH-123`, `JIRA-456`, URL) or implement it now.
+- *"This is just a test/example/script, the rules don't apply"* — the rules apply. CI runs against tests too.
+- *"I'll wrap it in `try: except Exception:` to be safe"* — that is the opposite of safe. It hides the bug you would have fixed.
+- *"I don't know the exact type so I'll use `Any`"* — read the code, infer the type, or use a Protocol/TypeVar. `Any` is a last resort, not a default.
+- *"It's only a small block, the violation doesn't matter"* — `aidoctor scan` does not grade on size. Zero violations means zero.
+
+## When a rule genuinely can't be followed
+
+There are real exceptions. The escape hatch is **narrow** and **explicit**:
+
+- **Test fixture with a realistic-looking secret** (JWT shape, AWS key shape): mark the exact line with `# aidoctor: disable=<rule_id>` and add a `# reason: fixture for X` comment on the same or previous line. Do not disable file-wide.
+- **Vendored / generated code**: place under a path the project excludes (check `pyproject.toml [tool.aidoctor]`). Do not edit it to add disables.
+- **Genuinely interfacing with `Any`-typed external code** (e.g., `**kwargs` from a library with no stubs): annotate `object` first; only fall back to `Any` if the call site requires it, and add `# reason: ...`.
+
+If you are reaching for a disable comment more than once per file, you are wrong about the exception — rewrite instead.
+
+## The rules
+
+Each rule has a stable `rule_id`. Headings are imperatives. Bodies show what's forbidden and what's required. **Rules are ordered by blast radius — top categories cause the worst damage if shipped.**
+{% for category in category_priority if category in rules_by_category %}
+{%- set label = (categories_with_labels | selectattr(0, "equalto", category) | map(attribute=1) | first) or category %}
+### {{ label }}
+{% for rule in rules_by_category[category] %}
+#### `{{ rule.rule_id }}` ({{ rule.severity }}) — {{ rule.message }}
+
+{{ rule.help }}
+
+**DON'T**
+```python
+{{ examples[rule.rule_id].dont }}
+```
+
+**DO**
+```python
+{{ examples[rule.rule_id].do }}
+```
+{% endfor %}
+{% endfor %}
+Run `aidoctor scan --explain <rule_id>` for the full rationale on any rule.
+
+## Common AI-slop combinations
+
+Slop travels in packs. If you spot one, scan for the others — patching individual lines won't fix the underlying pattern. **Delete and rewrite the block.**
+
+```python
+# "defensive stub" — fake types + bare except + stub
+def fetch_data(source: Any) -> Any:    # any-everywhere
+    try:
+        # TODO: implement              # stub-comment + todo-without-ticket
+        return None
+    except Exception:                  # except-exception-swallowing
+        pass                           # bare-except-pass
+
+# "loop slop" — range(len) + str-concat + mutate-while-iter
+out = ""
+for i in range(len(rows)):             # range-len-loop
+    if rows[i].stale:
+        rows.remove(rows[i])           # mutate-list-during-iteration
+    out += rows[i].name + "\n"         # str-concat-in-loop
+
+# "leaked credentials" — secret literal + swallowed auth error
+API_KEY = "sk-proj-9f8e7d6c5b4a3210"  # hardcoded-api-key
+try:
+    client.auth(API_KEY)
+except Exception:                      # except-exception-swallowing
+    logger.error("auth failed")        # caller never knows
+```
+
+## Pre-emit verification checklist
+
+After drafting, before emitting. Every box must check. If any fails, **rewrite — do not annotate-and-ship.**
+
+- [ ] No secret-shaped literal (`AKIA*`, `ASIA*`, `eyJ*.eyJ*.*`, `sk-*`, ≥12 chars on `KEY`/`TOKEN`/`SECRET`/`PASSWORD`/`AUTH`).
+- [ ] Every `except` names a specific class. Top-level `except Exception` re-raises.
+- [ ] No `from X import *`, duplicate imports, or conditional imports outside `try/except ImportError`.
+- [ ] Every import is used (or under `if TYPE_CHECKING:` / in `__all__`).
+- [ ] No `range(len(...))`. No list mutation during iteration of the same list.
+- [ ] No `time.sleep` in `tests/` or `test_*.py`. Use `wait_until` / fake clocks.
+- [ ] No stub comments (`# implement this`, `# placeholder`, `# your code here`). Use `raise NotImplementedError("...")`.
+- [ ] Every `TODO`/`FIXME`/`HACK` carries a ticket ref or URL.
+- [ ] No `raise` after unconditional `return`.
+- [ ] No `x is not None and isinstance(x, T)`.
+- [ ] Public functions have return annotations (`-> T` or `-> None`).
+- [ ] No `Any` on public types without a `# reason:` justification.
+- [ ] No sync I/O (`time.sleep`, `requests.*`) inside `async def`. Use `asyncio.sleep` / `httpx` / `asyncio.to_thread`.
+- [ ] Every `# aidoctor: disable=` has a `# reason:` neighbor.
+
+Any unchecked? Fix, then respond. `aidoctor scan` is the source of truth — the user will run it.
+
+## Related
+
+- `aidoctor scan .` — verify after generating.
+- `aidoctor scan --explain <rule_id>` — long-form rationale for a single rule.
+- `aidoctor score` — composite penalty across unique rules tripped.
+- https://github.com/aidoctor/aidoctor — rule source.

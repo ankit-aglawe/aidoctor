@@ -1,0 +1,86 @@
+name: aidoctor
+description: "Catch AI-slop Python patterns. Comments score and rule violations on the PR."
+author: aidoctor
+branding:
+  icon: activity
+  color: red
+
+inputs:
+  path:
+    description: "Path(s) to scan. Defaults to the repository root."
+    required: false
+    default: "."
+  fail-on:
+    description: "Exit non-zero if violations of this severity or worse are found. One of: error, warning, none."
+    required: false
+    default: "none"
+  diff-only:
+    description: "If 'true', scan only files changed in the PR (or commit range). Default: 'false'."
+    required: false
+    default: "false"
+  python-version:
+    description: "Python version to use for the runner. 3.10 minimum."
+    required: false
+    default: "3.12"
+  aidoctor-version:
+    description: "Pin aidoctor to a specific version (default: latest)."
+    required: false
+    default: ""
+  github-token:
+    description: "GitHub token for PR comment posting. Defaults to GITHUB_TOKEN."
+    required: false
+    default: ${{ github.token }}
+
+outputs:
+  score:
+    description: "0-100 health score for the scanned codebase."
+    value: ${{ steps.scan.outputs.score }}
+  label:
+    description: "Great / Needs work / Critical."
+    value: ${{ steps.scan.outputs.label }}
+  violations:
+    description: "Total violation count."
+    value: ${{ steps.scan.outputs.violations }}
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Install aidoctor
+      shell: bash
+      run: |
+        if [ -n "${{ inputs.aidoctor-version }}" ]; then
+          pip install "aidoctor==${{ inputs.aidoctor-version }}"
+        else
+          pip install aidoctor
+        fi
+
+    - name: Run aidoctor scan
+      id: scan
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: |
+        set +e
+        DIFF_FLAG=""
+        if [ "${{ inputs.diff-only }}" = "true" ]; then
+          DIFF_FLAG="--diff"
+        fi
+        aidoctor scan ${{ inputs.path }} $DIFF_FLAG --json > /tmp/aidoctor.json
+        EXITCODE=$?
+        SCORE=$(python -c "import json; print(json.load(open('/tmp/aidoctor.json'))['score']['value'])")
+        LABEL=$(python -c "import json; print(json.load(open('/tmp/aidoctor.json'))['score']['label'])")
+        VIOLATIONS=$(python -c "import json; print(json.load(open('/tmp/aidoctor.json'))['score']['total_violations'])")
+        echo "score=$SCORE" >> "$GITHUB_OUTPUT"
+        echo "label=$LABEL" >> "$GITHUB_OUTPUT"
+        echo "violations=$VIOLATIONS" >> "$GITHUB_OUTPUT"
+        echo "### aidoctor: $SCORE/100 ($LABEL)" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+        echo "Violations: $VIOLATIONS" >> "$GITHUB_STEP_SUMMARY"
+        # Re-run human-readable scan for the action log.
+        aidoctor scan ${{ inputs.path }} $DIFF_FLAG --fail-on ${{ inputs.fail-on }}
+        exit $?
