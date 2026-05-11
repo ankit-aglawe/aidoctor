@@ -21,14 +21,6 @@ A static analyzer for AI-generated Python code. Catches 25 patterns Claude Code,
 
 Install differs by harness. If you use more than one, install aidoctor separately for each.
 
-> **Pre-PyPI note:** aidoctor v0.1.0 isn't on PyPI yet. Until it is, replace every `uvx aidoctor` and `pip install aidoctor` below with the git-source form:
->
-> - `uvx --from git+https://github.com/ankit-aglawe/aidoctor aidoctor <args>`
-> - `uv tool install git+https://github.com/ankit-aglawe/aidoctor`
-> - `pip install git+https://github.com/ankit-aglawe/aidoctor`
->
-> The Claude Code plugin install below works today regardless — it pulls straight from this repo.
-
 ### Claude Code
 
 Register the marketplace and install the plugin:
@@ -99,18 +91,14 @@ Or paste this prompt into the agent:
 
 ## CLI
 
-For humans and CI. Until aidoctor is published on PyPI, install from git:
+For humans and CI:
 
 ```bash
-# zero-install one-shot (works today, pre-PyPI)
-uvx --from git+https://github.com/ankit-aglawe/aidoctor aidoctor scan .
-
-# persistent install from git
-uv tool install git+https://github.com/ankit-aglawe/aidoctor
-pipx install git+https://github.com/ankit-aglawe/aidoctor
+uvx aidoctor scan .             # zero-install
+uv tool install aidoctor        # persistent (2026-native)
+pipx install aidoctor           # isolated
+pip install aidoctor            # classic / CI
 ```
-
-Once we publish to PyPI (next release), these shorten to `uvx aidoctor scan .` / `uv tool install aidoctor` / `pip install aidoctor`.
 
 Then:
 
