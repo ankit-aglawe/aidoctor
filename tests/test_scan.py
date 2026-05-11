@@ -10,7 +10,7 @@ from aidoctor.scan import scan, scan_file
 def test_scan_file_returns_diagnostics(tmp_path: Path) -> None:
     f = tmp_path / "x.py"
     f.write_text('API_KEY = "sk-prod-1234567890abcdef"\n')
-    diags, parse_err = scan_file(f)
+    diags, parse_err, _source = scan_file(f)
     assert parse_err is None
     rule_ids = {d.rule_id for d in diags}
     assert "hardcoded-api-key" in rule_ids
@@ -19,7 +19,7 @@ def test_scan_file_returns_diagnostics(tmp_path: Path) -> None:
 def test_scan_file_clean_returns_empty(tmp_path: Path) -> None:
     f = tmp_path / "clean.py"
     f.write_text("def add(a: int, b: int) -> int:\n    return a + b\n")
-    diags, parse_err = scan_file(f)
+    diags, parse_err, _source = scan_file(f)
     assert parse_err is None
     assert diags == []
 
@@ -27,7 +27,7 @@ def test_scan_file_clean_returns_empty(tmp_path: Path) -> None:
 def test_scan_file_parse_error(tmp_path: Path) -> None:
     f = tmp_path / "broken.py"
     f.write_text("def not valid python\n")
-    diags, parse_err = scan_file(f)
+    diags, parse_err, _source = scan_file(f)
     assert parse_err is not None
     assert "parse error" in parse_err.lower()
 

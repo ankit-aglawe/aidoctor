@@ -13,7 +13,6 @@ from __future__ import annotations
 import logging
 import os
 import re
-import sys
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -29,7 +28,7 @@ PR_URL_RE = re.compile(
 )
 
 GITHUB_API = "https://api.github.com"
-USER_AGENT = "aidoctor (https://github.com/aidoctor/aidoctor)"
+USER_AGENT = "aidoctor (https://github.com/ankit-aglawe/aidoctor)"
 
 
 class ScanPrError(Exception):
@@ -238,55 +237,20 @@ def cli_run(url: str, json_output: bool, fail_on: str) -> int:
     from rich.console import Console
 
     from aidoctor.render import render_terminal
+    from aidoctor.scan import build_json_payload, compute_exit_code
     from aidoctor.score import compute_score
 
     try:
         result = scan_pr(url)
-    except BadPrUrlError as e:
-        click.echo(f"aidoctor: {e}", err=True)
-        return 3
-    except GitHubNotFoundError as e:
-        click.echo(f"aidoctor: {e}", err=True)
-        return 3
-    except GitHubRateLimitError as e:
-        click.echo(f"aidoctor: {e}", err=True)
-        return 3
-    except GitHubNetworkError as e:
+    except ScanPrError as e:
         click.echo(f"aidoctor: {e}", err=True)
         return 3
 
     score = compute_score(result.diagnostics)
 
     if json_output:
-        click.echo(
-            _json.dumps(
-                {
-                    "schema_version": 1,
-                    "score": {
-                        "value": score.value,
-                        "label": score.label,
-                        "unique_error_rules": score.unique_error_rules,
-                        "unique_warning_rules": score.unique_warning_rules,
-                        "total_violations": score.total_violations,
-                    },
-                    "files_scanned": result.files_scanned,
-                    "files_skipped": result.files_skipped,
-                    "parse_errors": [
-                        {"file": str(p), "error": err}
-                        for p, err in result.parse_errors
-                    ],
-                    "diagnostics": [d.to_dict() for d in result.diagnostics],
-                },
-                indent=2,
-            )
-        )
+        click.echo(_json.dumps(build_json_payload(result, score), indent=2))
     else:
         render_terminal(result, score, console=Console())
 
-    if fail_on == "error" and score.unique_error_rules > 0:
-        return 1
-    if fail_on == "warning" and (
-        score.unique_error_rules > 0 or score.unique_warning_rules > 0
-    ):
-        return 1
-    return 0
+    return compute_exit_code(score, fail_on)

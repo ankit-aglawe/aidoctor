@@ -11,7 +11,6 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import shutil
-import sys
 from dataclasses import dataclass
 from importlib.resources import files
 from pathlib import Path
@@ -82,12 +81,31 @@ def load_platforms() -> list[Platform]:
     ]
 
 
-def load_slash_command(format: str) -> str:
+def load_slash_command(fmt: str) -> str:
     """Return the slash command file content for the given format."""
     skill_pkg = files("aidoctor.skill")
-    if format == "toml":
+    if fmt == "toml":
         return (skill_pkg / "slash_command.toml").read_text(encoding="utf-8")
     return (skill_pkg / "slash_command.md").read_text(encoding="utf-8")
+
+
+_FRONTMATTER_RE = "---\n"
+
+
+def split_frontmatter(rendered: str) -> tuple[str | None, str]:
+    """Split a markdown string with optional YAML frontmatter.
+
+    Returns (frontmatter_block_or_None, body). The frontmatter block excludes
+    the leading and trailing `---` lines so it's directly YAML-parseable.
+    """
+    if not rendered.startswith(_FRONTMATTER_RE):
+        return None, rendered
+    end = rendered.find("\n---\n", len(_FRONTMATTER_RE))
+    if end == -1:
+        return None, rendered
+    frontmatter = rendered[len(_FRONTMATTER_RE) : end]
+    body = rendered[end + len(_FRONTMATTER_RE) + 1 :]
+    return frontmatter, body
 
 
 def render_skill() -> str:

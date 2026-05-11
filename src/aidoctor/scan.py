@@ -1,7 +1,8 @@
 """Scan orchestrator.
 
 For each file: parse with libcst, run every rule visitor, collect diagnostics.
-Uses multiprocessing.Pool when scanning more than 4 files (per Eng-D3 from eng review).
+Uses multiprocessing.Pool when scanning more than 4 files; serial below that
+threshold since pool startup cost dominates for tiny scans.
 """
 
 from __future__ import annotations
@@ -37,20 +38,62 @@ class ScanResult:
     rule_errors: list[tuple[Path, str, str]] = field(default_factory=list)
 
 
-def scan_file(path: Path) -> tuple[list[Diagnostic], str | None]:
-    """Scan one file. Return (diagnostics, parse_error_message_or_None).
+def build_json_payload(result: "ScanResult", score) -> dict:
+    """JSON shape for `aidoctor scan --json` and `aidoctor scan-pr --json`.
 
-    This is a top-level function so it pickles cleanly for multiprocessing.Pool.
+    Single source of truth for the schema. Bumping `schema_version` here is the
+    one place callers need to coordinate.
+    """
+    return {
+        "schema_version": 1,
+        "score": {
+            "value": score.value,
+            "label": score.label,
+            "unique_error_rules": score.unique_error_rules,
+            "unique_warning_rules": score.unique_warning_rules,
+            "total_violations": score.total_violations,
+        },
+        "files_scanned": result.files_scanned,
+        "files_skipped": result.files_skipped,
+        "parse_errors": [
+            {"file": str(p), "error": err} for p, err in result.parse_errors
+        ],
+        "diagnostics": [d.to_dict() for d in result.diagnostics],
+    }
+
+
+EXIT_OK = 0
+EXIT_FAIL_ON = 1
+
+
+def compute_exit_code(score, fail_on: str) -> int:
+    """Decide exit code from a score given the user's --fail-on policy."""
+    if fail_on == "error" and score.unique_error_rules > 0:
+        return EXIT_FAIL_ON
+    if fail_on == "warning" and (
+        score.unique_error_rules > 0 or score.unique_warning_rules > 0
+    ):
+        return EXIT_FAIL_ON
+    return EXIT_OK
+
+
+def scan_file(path: Path) -> tuple[list[Diagnostic], str | None, str]:
+    """Scan one file. Returns (diagnostics, parse_error_or_None, source_text).
+
+    Source text is returned so callers can apply inline suppression filters
+    without re-reading the file from disk.
+
+    Top-level function so it pickles cleanly for multiprocessing.Pool.
     """
     try:
         source = path.read_text(encoding="utf-8", errors="replace")
     except OSError as e:
-        return [], f"could not read file: {e}"
+        return [], f"could not read file: {e}", ""
 
     try:
         module = cst.parse_module(source)
     except cst.ParserSyntaxError as e:
-        return [], f"libcst parse error: {e}"
+        return [], f"libcst parse error: {e}", source
 
     wrapper = cst.MetadataWrapper(module)
     context = RuleContext(file=path, source=source)
@@ -59,13 +102,11 @@ def scan_file(path: Path) -> tuple[list[Diagnostic], str | None]:
         rule = rule_class(context)
         try:
             wrapper.visit(rule)
-        except Exception as e:  # noqa: BLE001 - intentionally broad for rule isolation
-            # Rule crashed on this file. Log + continue so one broken rule doesn't kill the scan.
-            logger.warning(
-                "rule %s failed on %s: %s", rule_class.rule_id, path, e
-            )
+        # aidoctor: disable=except-exception-swallowing
+        except Exception as e:  # noqa: BLE001 - intentional: one broken rule must not kill the scan
+            logger.warning("rule %s failed on %s: %s", rule_class.rule_id, path, e)
 
-    return context.diagnostics, None
+    return context.diagnostics, None, source
 
 
 def scan(paths: list[Path], *, jobs: int | None = None) -> ScanResult:
@@ -90,35 +131,26 @@ def scan(paths: list[Path], *, jobs: int | None = None) -> ScanResult:
         worker_count = max(1, jobs)
         use_pool = worker_count > 1 and len(files) > 1
 
+    def _accumulate(path: Path, diagnostics: list[Diagnostic], parse_err: str | None, source: str) -> None:
+        if parse_err is not None:
+            result.parse_errors.append((path, parse_err))
+            result.files_skipped += 1
+            return
+        result.diagnostics.extend(diagnostics)
+        result.files_scanned += 1
+        source_by_file[path] = source
+
     if use_pool:
         # imap streams results back as they finish — lower latency for big scans.
         with mp.get_context("spawn").Pool(worker_count) as pool:
-            for path, (diagnostics, parse_err) in zip(
+            for path, (diagnostics, parse_err, source) in zip(
                 files, pool.imap(scan_file, files), strict=True
             ):
-                if parse_err is not None:
-                    result.parse_errors.append((path, parse_err))
-                    result.files_skipped += 1
-                    continue
-                result.diagnostics.extend(diagnostics)
-                result.files_scanned += 1
-                try:
-                    source_by_file[path] = path.read_text(encoding="utf-8", errors="replace")
-                except OSError:
-                    pass
+                _accumulate(path, diagnostics, parse_err, source)
     else:
         for path in files:
-            diagnostics, parse_err = scan_file(path)
-            if parse_err is not None:
-                result.parse_errors.append((path, parse_err))
-                result.files_skipped += 1
-                continue
-            result.diagnostics.extend(diagnostics)
-            result.files_scanned += 1
-            try:
-                source_by_file[path] = path.read_text(encoding="utf-8", errors="replace")
-            except OSError:
-                pass
+            diagnostics, parse_err, source = scan_file(path)
+            _accumulate(path, diagnostics, parse_err, source)
 
     # Apply inline suppression filters (`# aidoctor: disable=...`).
     result.diagnostics = filter_diagnostics(result.diagnostics, source_by_file)

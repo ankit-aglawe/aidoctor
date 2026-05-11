@@ -30,7 +30,7 @@ class RangeLenRule(Rule):
         "`for item in x:` if you only need the value. AI assistants produce "
         "this pattern when translating from older code or when uncertain."
     )
-    url = "https://github.com/aidoctor/aidoctor#range-len-loop"
+    url = "https://github.com/ankit-aglawe/aidoctor#range-len-loop"
 
     def visit_For(self, node: cst.For) -> None:
         iter_expr = node.iter
@@ -61,7 +61,7 @@ class MutateListDuringIterationRule(Rule):
         "Iterate over a copy (`for x in lst[:]`), build a new list with comprehension, "
         "or collect deletions for a post-loop sweep."
     )
-    url = "https://github.com/aidoctor/aidoctor#mutate-list-during-iteration"
+    url = "https://github.com/ankit-aglawe/aidoctor#mutate-list-during-iteration"
 
     def visit_For(self, node: cst.For) -> None:
         # Find the iterated name (only handles direct `for x in name` for v1).
@@ -89,17 +89,23 @@ class TimeSleepInTestRule(Rule):
         "with freezegun or pytest-mock, or use `asyncio.sleep` inside async tests "
         "(which test runners can fast-forward)."
     )
-    url = "https://github.com/aidoctor/aidoctor#time-sleep-in-test"
+    url = "https://github.com/ankit-aglawe/aidoctor#time-sleep-in-test"
 
-    def visit_Call(self, node: cst.Call) -> None:
+    def __init__(self, context: cst.CSTVisitor) -> None:
+        super().__init__(context)
+        # Compute once per file rather than per Call node — 80% of source files
+        # in a typical repo aren't tests, and most Call nodes wouldn't match anyway.
         path_str = str(self.context.file)
-        is_test_file = (
+        name = path_str.rsplit("/", 1)[-1]
+        self._is_test_file = (
             "/tests/" in path_str
             or "/test/" in path_str
-            or path_str.split("/")[-1].startswith("test_")
+            or name.startswith("test_")
             or path_str.endswith("_test.py")
         )
-        if not is_test_file:
+
+    def visit_Call(self, node: cst.Call) -> None:
+        if not self._is_test_file:
             return
         # Match `time.sleep(...)`.
         func = node.func

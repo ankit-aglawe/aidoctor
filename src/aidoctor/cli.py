@@ -1,12 +1,14 @@
 """Click-based CLI entry point.
 
-`aidoctor scan PATH` is the main entry. Other subcommands (install, scan-pr) land later.
+Commands: `scan`, `scan-pr <url>`, `install`, `skill`. Run `aidoctor --help`
+to list everything.
 """
 
 from __future__ import annotations
 
 import json
 import logging
+import re
 import sys
 from pathlib import Path
 
@@ -14,16 +16,15 @@ import click
 from rich.console import Console
 
 from aidoctor.discover import NoPythonFilesError
-from aidoctor.install import cli_run as install_cli_run
+from aidoctor.install import cli_run as install_cli_run, split_frontmatter
 from aidoctor.render import render_terminal
 from aidoctor.rules import RULES
-from aidoctor.scan import scan
+from aidoctor.scan import build_json_payload, compute_exit_code, scan
 from aidoctor.score import compute_score
 
 EXIT_OK = 0
 EXIT_USAGE = 2
 EXIT_NO_FILES = 2
-EXIT_FAIL_ON = 1
 
 
 @click.group()
@@ -98,8 +99,9 @@ def scan_cmd(
         sys.exit(EXIT_NO_FILES)
 
     # Apply --diff filter if requested.
+    # aidoctor: disable=conditional-import-outside-try
     if use_diff:
-        from aidoctor.diff_mode import (
+        from aidoctor.diff_mode import (  # noqa: PLC0415 - lazy import keeps cold-start fast
             GitNotAvailableError,
             filter_diagnostics_to_diff,
             get_changed_lines,
@@ -117,38 +119,11 @@ def scan_cmd(
     score = compute_score(result.diagnostics)
 
     if json_output:
-        _emit_json(result, score)
+        click.echo(json.dumps(build_json_payload(result, score), indent=2))
     else:
         render_terminal(result, score, console=Console())
 
-    # Exit-code policy
-    if fail_on == "error" and score.unique_error_rules > 0:
-        sys.exit(EXIT_FAIL_ON)
-    if fail_on == "warning" and (
-        score.unique_error_rules > 0 or score.unique_warning_rules > 0
-    ):
-        sys.exit(EXIT_FAIL_ON)
-    sys.exit(EXIT_OK)
-
-
-def _emit_json(result, score) -> None:
-    payload = {
-        "schema_version": 1,
-        "score": {
-            "value": score.value,
-            "label": score.label,
-            "unique_error_rules": score.unique_error_rules,
-            "unique_warning_rules": score.unique_warning_rules,
-            "total_violations": score.total_violations,
-        },
-        "files_scanned": result.files_scanned,
-        "files_skipped": result.files_skipped,
-        "parse_errors": [
-            {"file": str(p), "error": err} for p, err in result.parse_errors
-        ],
-        "diagnostics": [d.to_dict() for d in result.diagnostics],
-    }
-    click.echo(json.dumps(payload, indent=2))
+    sys.exit(compute_exit_code(score, fail_on))
 
 
 def _print_rule_doc(rule_id: str) -> None:
@@ -229,35 +204,23 @@ def skill_cmd(out_format: str) -> None:
 
     rendered = render_skill()
     fmt = out_format.lower()
+    frontmatter, body = split_frontmatter(rendered)
 
-    if fmt == "raw" or fmt == "claude":
+    if fmt in {"raw", "claude"}:
         click.echo(rendered, nl=False)
         return
 
     if fmt in {"generic", "opencode", "codex", "gemini"}:
-        # Strip the YAML frontmatter for plain-markdown / system-prompt consumers.
         # OpenCode, Codex, and Gemini CLI all read plain markdown rules; the
         # SKILL.md-style frontmatter is Claude-specific and confuses other agents.
-        if rendered.startswith("---\n"):
-            end = rendered.find("\n---\n", 4)
-            if end != -1:
-                click.echo(rendered[end + 5 :], nl=False)
-                return
-        click.echo(rendered, nl=False)
+        click.echo(body, nl=False)
         return
 
     if fmt == "cursor":
         # Cursor's .mdc files prefer simple frontmatter with description + globs.
-        # Convert our frontmatter to the Cursor shape.
-        import re
-
-        body = rendered
-        if rendered.startswith("---\n"):
-            end = rendered.find("\n---\n", 4)
-            if end != -1:
-                body = rendered[end + 5 :]
-        desc_match = re.search(r"^description:\s*(.+)$", rendered, re.MULTILINE)
-        desc = desc_match.group(1) if desc_match else "AI Doctor — catch AI Python slop."
+        # Re-key the description out of our frontmatter into Cursor's shape.
+        desc_match = re.search(r"^description:\s*(.+)$", frontmatter or "", re.MULTILINE)
+        desc = desc_match.group(1) if desc_match else "AI Doctor — Python static analyzer for AI-generated code."
         cursor_frontmatter = (
             "---\n"
             f"description: {desc}\n"
@@ -268,6 +231,8 @@ def skill_cmd(out_format: str) -> None:
         )
         click.echo(cursor_frontmatter + body, nl=False)
         return
+
+    raise click.UsageError(f"unknown skill format: {fmt}")
 
 
 @main.command(name="scan-pr")
@@ -287,7 +252,8 @@ def scan_pr_cmd(url: str, json_output: bool, fail_on: str) -> None:
     Uses GITHUB_TOKEN env var for auth when set. Without a token, anonymous
     GitHub API calls are subject to 60/hour rate limit.
     """
-    from aidoctor.scan_pr import cli_run as scan_pr_cli_run
+    # aidoctor: disable=conditional-import-outside-try
+    from aidoctor.scan_pr import cli_run as scan_pr_cli_run  # noqa: PLC0415
 
     rc = scan_pr_cli_run(url=url, json_output=json_output, fail_on=fail_on)
     sys.exit(rc)
