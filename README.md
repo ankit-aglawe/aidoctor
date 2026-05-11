@@ -62,6 +62,16 @@ How major Python projects score:
 
 Want your project listed? [Open a PR](https://github.com/aidoctor/aidoctor/pulls) adding it to `leaderboard.yaml`.
 
+## Fixing violations
+
+aidoctor doesn't call an LLM itself. It hands the work to your AI agent (which already has the SKILL.md installed, so it knows the rules):
+
+```bash
+aidoctor scan . --fix-prompt | pbcopy   # paste into Claude/Cursor/Codex
+```
+
+The output is a markdown prompt listing every violation with line numbers and fix guidance. Your agent applies the fixes, you re-run `aidoctor scan` to confirm the score climbs. No API key. No spend.
+
 ## Inline suppression
 
 ```python
