@@ -65,5 +65,5 @@ def test_doctor_includes_total_rule_count() -> None:
     result = runner.invoke(main, ["doctor", "--json"])
     data = json.loads(result.output)
     assert "total_rules" in data
-    # v1.1 legacy 25 + 3 OWASP + 5 ai_style = at least 33
-    assert data["total_rules"] >= 33
+    # v2.0: 24 legacy (dropped generic-without-typevar) + 3 OWASP + 5 ai_style = 32
+    assert data["total_rules"] >= 30

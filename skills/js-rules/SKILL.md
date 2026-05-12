@@ -402,9 +402,11 @@ async function checkout(cart: Cart) {
 
 Dead code. Remove. Type-only imports should use `import type`.
 
-#### `js-default-export-mixed` (warning) — mixing default + named exports
-
-Creates two import styles for one file. Pick named exports as default — they tree-shake better and refactor better.
+<!-- `js-default-export-mixed` and `js-magic-string-import-path` were dropped in v2.0.
+     Next.js page/layout/route files REQUIRE default export; the mixed-style rule was
+     a 100% FP on every Next.js app. The magic-string-import rule was project-specific
+     style preference, not an AI reflex. See evals/HONESTY_AUDIT.md for the
+     full v2.0 drop rationale. -->
 
 ## Common AI-slop combinations
 

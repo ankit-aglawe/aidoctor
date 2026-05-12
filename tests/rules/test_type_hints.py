@@ -9,7 +9,6 @@ import libcst as cst
 from aidoctor.rules._base import RuleContext
 from aidoctor.rules.type_hints import (
     AnyEverywhereRule,
-    GenericWithoutTypeVarRule,
     MissingReturnTypeRule,
 )
 
@@ -104,15 +103,4 @@ def test_dunder_clean() -> None:
     assert _run(MissingReturnTypeRule, src) == []
 
 
-def test_generic_without_typevar_fires() -> None:
-    src = "from typing import Generic\n\nclass Cache(Generic[T]):\n    pass\n"
-    assert len(_run(GenericWithoutTypeVarRule, src)) == 1
-
-
-def test_generic_with_typevar_clean() -> None:
-    src = (
-        "from typing import Generic, TypeVar\n\n"
-        "T = TypeVar('T')\n\n"
-        "class Cache(Generic[T]):\n    pass\n"
-    )
-    assert _run(GenericWithoutTypeVarRule, src) == []
+# GenericWithoutTypeVarRule tests removed in v2.0 — rule dropped per HONESTY_AUDIT.

@@ -122,62 +122,11 @@ class MissingReturnTypeRule(Rule):
             self.report(cand)
 
 
-class GenericWithoutTypeVarRule(Rule):
-    """Detects `Generic[T]` where T is not declared via TypeVar in the same module."""
-
-    rule_id = "generic-without-typevar"
-    severity = Severity.WARNING
-    category = Category.TYPE_HINTS
-    message = "`Generic[X]` requires X to be a TypeVar declared with TypeVar()."
-    help = (
-        "Using `Generic[T]` without declaring `T = TypeVar('T')` makes the class "
-        "non-generic at runtime (T is treated as a regular name). AI assistants "
-        "produce this pattern when faking parameterized types. Declare the "
-        "TypeVar at module scope: `T = TypeVar('T')` (or `from typing import "
-        "TypeVar`) before the class."
-    )
-    url = "https://github.com/ankit-aglawe/aidoctor#generic-without-typevar"
-
-    def __init__(self, context: _Any) -> None:
-        super().__init__(context)
-        self._declared_typevars: set[str] = set()
-        self._candidate_uses: list[tuple[cst.CSTNode, str]] = []
-
-    def visit_Assign(self, node: cst.Assign) -> None:
-        # Look for `T = TypeVar('T')` or `T = TypeVar('T', ...)`.
-        if not isinstance(node.value, cst.Call):
-            return
-        func = node.value.func
-        is_typevar = (
-            (isinstance(func, cst.Name) and func.value == "TypeVar")
-            or (
-                isinstance(func, cst.Attribute)
-                and isinstance(func.value, cst.Name)
-                and func.value.value == "typing"
-                and func.attr.value == "TypeVar"
-            )
-        )
-        if not is_typevar:
-            return
-        for target in node.targets:
-            if isinstance(target.target, cst.Name):
-                self._declared_typevars.add(target.target.value)
-
-    def visit_Subscript(self, node: cst.Subscript) -> None:
-        # Look for `Generic[T]` usage.
-        value = node.value
-        if not isinstance(value, cst.Name) or value.value != "Generic":
-            return
-        for el in node.slice:
-            if isinstance(el.slice, cst.Index):
-                idx = el.slice.value
-                if isinstance(idx, cst.Name):
-                    self._candidate_uses.append((node, idx.value))
-
-    def leave_Module(self, original_node: cst.Module) -> None:
-        for node, name in self._candidate_uses:
-            if name not in self._declared_typevars:
-                self.report(node, message=f"`Generic[{name}]` but `{name}` is not a TypeVar in this module.")
+# `GenericWithoutTypeVarRule` was dropped in v2.0 per the HONESTY_AUDIT:
+# baseline subagents rarely trip this pattern (LOW confidence), and the
+# legitimate cases (TypeVar declared in a sibling module, imported via *)
+# generate false positives. If a v2.x community user requests reinstatement,
+# the rule can be revived from git history at commit 1d9d616 or earlier.
 
 
 def _is_any_annotation(node: cst.BaseExpression) -> bool:

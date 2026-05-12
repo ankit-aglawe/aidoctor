@@ -53,7 +53,6 @@ from aidoctor.rules.secrets import (
 )
 from aidoctor.rules.type_hints import (
     AnyEverywhereRule,
-    GenericWithoutTypeVarRule,
     MissingReturnTypeRule,
 )
 
@@ -80,10 +79,9 @@ RULES: list[type[Rule]] = [
     SyncIoInAsyncFnRule,
     AsyncioRunInsideAsyncFnRule,
     BlockingCallInEventLoopRule,
-    # Type Hints (3)
+    # Type Hints (2 — dropped GenericWithoutTypeVarRule in v2.0; LOW yield per HONESTY_AUDIT)
     AnyEverywhereRule,
     MissingReturnTypeRule,
-    GenericWithoutTypeVarRule,
     # Performance (3)
     NestedLoopAppendRule,
     StrConcatInLoopRule,

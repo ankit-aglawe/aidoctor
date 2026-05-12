@@ -80,8 +80,8 @@ def test_render_skill_contains_frontmatter() -> None:
     assert "Apply before returning" not in desc_line
     # Should mention some trigger symptoms.
     assert "hardcoded secrets" in desc_line.lower()
-    # Should reference our 25 rules.
-    assert "rule_count: 25" in rendered
+    # Should reference our rule count (v2.0: 24 after dropping generic-without-typevar).
+    assert "rule_count: 24" in rendered
 
 
 def test_install_skips_when_agent_dir_missing(tmp_path: Path) -> None:
