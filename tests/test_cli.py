@@ -33,11 +33,25 @@ def test_scan_clean_repo_exits_zero(tmp_path: Path) -> None:
     assert "Score:" in result.output
 
 
-def test_scan_slop_repo_exits_zero_with_fail_on_none(tmp_path: Path) -> None:
+def test_scan_slop_repo_default_exits_one(tmp_path: Path) -> None:
+    """v2.0 default is --fail-on=error: violations now fail CI by default.
+
+    This closes the v1.1 footgun where errors-but-exit-0 made aidoctor's CI
+    integration silently broken. The old behavior is still reachable via
+    --fail-on=none (see test below).
+    """
     runner = CliRunner()
     repo = _make_slop_repo(tmp_path)
     result = runner.invoke(main, ["scan", str(repo)])
-    # default --fail-on=none means exit 0 even with violations.
+    assert result.exit_code == 1
+    assert "Hardcoded Secrets" in result.output
+
+
+def test_scan_slop_repo_with_fail_on_none_exits_zero(tmp_path: Path) -> None:
+    """The opt-out path: --fail-on=none preserves v1.1 behavior for legacy callers."""
+    runner = CliRunner()
+    repo = _make_slop_repo(tmp_path)
+    result = runner.invoke(main, ["scan", str(repo), "--fail-on", "none"])
     assert result.exit_code == 0
     assert "Hardcoded Secrets" in result.output
 
@@ -59,7 +73,8 @@ def test_scan_with_fail_on_warning_exits_one(tmp_path: Path) -> None:
 def test_scan_json_emits_valid_json(tmp_path: Path) -> None:
     runner = CliRunner()
     repo = _make_slop_repo(tmp_path)
-    result = runner.invoke(main, ["scan", str(repo), "--json"])
+    # --fail-on=none keeps exit 0 so we can parse the JSON regardless of slop level.
+    result = runner.invoke(main, ["scan", str(repo), "--json", "--fail-on", "none"])
     assert result.exit_code == 0
     data = json.loads(result.output)
     assert data["schema_version"] == 1

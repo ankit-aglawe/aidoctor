@@ -61,8 +61,9 @@ def main() -> None:
 )
 @click.option(
     "--fail-on",
-    type=click.Choice(["error", "warning", "none"], case_sensitive=False),
-    default="none",
+    type=click.Choice(["critical", "error", "warning", "none"], case_sensitive=False),
+    default="error",
+    show_default=True,
     help="Exit non-zero if violations of the given severity (or worse) are found.",
 )
 @click.option(
@@ -319,8 +320,9 @@ def rules_cmd(category: str | None, severity: str | None, json_output: bool) -> 
 @click.option("--json", "json_output", is_flag=True, help="Emit JSON instead of terminal output.")
 @click.option(
     "--fail-on",
-    type=click.Choice(["error", "warning", "none"], case_sensitive=False),
-    default="none",
+    type=click.Choice(["critical", "error", "warning", "none"], case_sensitive=False),
+    default="error",
+    show_default=True,
     help="Exit non-zero if violations of the given severity (or worse) are found.",
 )
 def scan_pr_cmd(url: str, json_output: bool, fail_on: str) -> None:

@@ -4,7 +4,53 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from aidoctor.scan import scan, scan_file
+from aidoctor.rules._base import Category, Diagnostic, Severity
+from aidoctor.scan import compute_exit_code, scan, scan_file
+from aidoctor.score import compute_score
+
+
+def _diag(rule_id: str, sev: Severity) -> Diagnostic:
+    return Diagnostic(
+        rule_id=rule_id, severity=sev, category=Category.SECRETS,
+        file=Path("/tmp/x.py"), line=1, column=0, message="m", help="h",
+    )
+
+
+# --- compute_exit_code with critical severity (W6/2) ---
+
+
+def test_exit_code_fail_on_error_blocks_on_critical() -> None:
+    """fail_on=error blocks on critical too — critical is 'error or worse'."""
+    score = compute_score([_diag("crit-rule", Severity.CRITICAL)])
+    assert compute_exit_code(score, "error") == 1
+
+
+def test_exit_code_fail_on_critical_only_blocks_on_critical() -> None:
+    """fail_on=critical lets errors and warnings through; blocks only on critical."""
+    score = compute_score([_diag("err-rule", Severity.ERROR)])
+    assert compute_exit_code(score, "critical") == 0
+
+    score = compute_score([_diag("crit-rule", Severity.CRITICAL)])
+    assert compute_exit_code(score, "critical") == 1
+
+
+def test_exit_code_fail_on_warning_blocks_on_critical() -> None:
+    """warning is the most-strict; blocks on warning, error, AND critical."""
+    score = compute_score([_diag("crit-rule", Severity.CRITICAL)])
+    assert compute_exit_code(score, "warning") == 1
+
+
+def test_exit_code_fail_on_none_never_blocks() -> None:
+    """The opt-out path: --fail-on=none lets everything through."""
+    score = compute_score([_diag("crit-rule", Severity.CRITICAL)])
+    assert compute_exit_code(score, "none") == 0
+
+
+def test_exit_code_clean_score_always_zero() -> None:
+    """Clean scan exits 0 regardless of fail-on policy."""
+    score = compute_score([])
+    for policy in ("none", "critical", "error", "warning"):
+        assert compute_exit_code(score, policy) == 0, f"failed for {policy}"
 
 
 def test_scan_file_returns_diagnostics(tmp_path: Path) -> None:

@@ -90,13 +90,28 @@ EXIT_FAIL_ON = 1
 
 
 def compute_exit_code(score, fail_on: str) -> int:
-    """Decide exit code from a score given the user's --fail-on policy."""
-    if fail_on == "error" and score.unique_error_rules > 0:
-        return EXIT_FAIL_ON
-    if fail_on == "warning" and (
-        score.unique_error_rules > 0 or score.unique_warning_rules > 0
-    ):
-        return EXIT_FAIL_ON
+    """Decide exit code given the user's --fail-on policy.
+
+    Severity ranking (worst first): critical > error > warning.
+    A `fail_on` of N means: fail if any rule at severity N-or-worse fired.
+
+    Policies:
+        none      -> never fail (opt-out for legacy callers)
+        critical  -> fail only on critical
+        error     -> fail on critical or error (the v2.0 default)
+        warning   -> fail on any rule
+    """
+    if fail_on == "none":
+        return EXIT_OK
+    has_critical = score.unique_critical_rules > 0
+    has_error = score.unique_error_rules > 0
+    has_warning = score.unique_warning_rules > 0
+    if fail_on == "critical":
+        return EXIT_FAIL_ON if has_critical else EXIT_OK
+    if fail_on == "error":
+        return EXIT_FAIL_ON if (has_critical or has_error) else EXIT_OK
+    if fail_on == "warning":
+        return EXIT_FAIL_ON if (has_critical or has_error or has_warning) else EXIT_OK
     return EXIT_OK
 
 
