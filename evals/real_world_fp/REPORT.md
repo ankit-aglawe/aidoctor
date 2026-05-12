@@ -9,20 +9,22 @@ Reproduce: `uv run python evals/real_world_fp/run_fp_test.py`
 
 
 ## requests @ `v2.32.3`
-Files scanned: **18** · Findings: **62** · Unique rules: **7**
+Files scanned: **18** · Findings: **70** · Unique rules: **9**
 
 | Rule | Severity | Occurrences |
 |---|---|---|
 | `import-without-use` | warning | 32 |
 | `missing-return-type` | warning | 15 |
 | `todo-without-ticket` | warning | 7 |
+| `ai-useless-docstring` | warning | 5 |
 | `ai-section-divider` | warning | 4 |
+| `ai-generic-vars-in-long-fn` | warning | 3 |
 | `nested-loop-append` | warning | 2 |
 | `stub-comment` | error | 1 |
 | `repeated-dict-lookup` | warning | 1 |
 
 ## flask @ `3.0.3`
-Files scanned: **24** · Findings: **40** · Unique rules: **10**
+Files scanned: **24** · Findings: **44** · Unique rules: **12**
 
 | Rule | Severity | Occurrences |
 |---|---|---|
@@ -30,19 +32,22 @@ Files scanned: **24** · Findings: **40** · Unique rules: **10**
 | `except-exception-swallowing` | warning | 5 |
 | `duplicate-import` | warning | 4 |
 | `import-without-use` | warning | 4 |
+| `ai-useless-docstring` | warning | 3 |
 | `eval-or-exec-on-non-constant` | warning | 2 |
 | `pickle-loads-on-non-constant` | warning | 2 |
 | `repeated-dict-lookup` | warning | 2 |
 | `todo-without-ticket` | warning | 2 |
 | `bare-except-pass` | error | 1 |
 | `nested-loop-append` | warning | 1 |
+| `ai-obvious-type-annotation` | warning | 1 |
 
 ## httpx @ `0.27.2`
-Files scanned: **24** · Findings: **36** · Unique rules: **13**
+Files scanned: **24** · Findings: **44** · Unique rules: **16**
 
 | Rule | Severity | Occurrences |
 |---|---|---|
 | `conditional-import-outside-try` | warning | 8 |
+| `ai-useless-docstring` | warning | 6 |
 | `duplicate-import` | warning | 5 |
 | `any-everywhere` | warning | 4 |
 | `nested-loop-append` | warning | 3 |
@@ -54,6 +59,8 @@ Files scanned: **24** · Findings: **36** · Unique rules: **13**
 | `stub-comment` | error | 1 |
 | `todo-without-ticket` | warning | 1 |
 | `ai-emphasis-label` | warning | 1 |
+| `ai-obvious-type-annotation` | warning | 1 |
+| `ai-generic-vars-in-long-fn` | warning | 1 |
 | `ai-rule-of-three-padding` | warning | 1 |
 
 ## ripgrep @ `14.1.1`
@@ -90,6 +97,7 @@ Total files scanned: **133**
 | `import-without-use` | 38 |
 | `conditional-import-outside-try` | 25 |
 | `missing-return-type` | 15 |
+| `ai-useless-docstring` | 14 |
 | `todo-without-ticket` | 10 |
 | `duplicate-import` | 9 |
 | `ai-section-divider` | 8 |
@@ -97,10 +105,12 @@ Total files scanned: **133**
 | `nested-loop-append` | 6 |
 | `repeated-dict-lookup` | 5 |
 | `ai-todo-without-ticket-multilang` | 5 |
+| `ai-generic-vars-in-long-fn` | 4 |
 | `any-everywhere` | 4 |
 | `stub-comment` | 2 |
 | `eval-or-exec-on-non-constant` | 2 |
 | `pickle-loads-on-non-constant` | 2 |
+| `ai-obvious-type-annotation` | 2 |
 | `str-concat-in-loop` | 2 |
 | `ai-emphasis-label` | 2 |
 | `ai-rule-of-three-padding` | 2 |
