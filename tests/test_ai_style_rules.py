@@ -11,19 +11,29 @@ from pathlib import Path
 
 
 def test_ai_style_manifest_loadable() -> None:
+    """The original 5 ai_style rules + 7 universal patterns (v2.0 Phase 2c)."""
     import aidoctor
     from aidoctor.engine.declarative import load_manifest
 
     manifest = Path(aidoctor.__file__).parent / "rules" / "manifest" / "ai_style.jsonl"
     rules = load_manifest(manifest)
     ids = {r.id for r in rules}
-    assert ids == {
-        "ai-emphasis-label",
-        "ai-section-divider",
-        "ai-hedge-comment",
-        "ai-self-praise-comment",
-        "ai-emoji-in-code",
-    }
+    # The 5 original cross-language rules
+    assert "ai-emphasis-label" in ids
+    assert "ai-section-divider" in ids
+    assert "ai-hedge-comment" in ids
+    assert "ai-self-praise-comment" in ids
+    assert "ai-emoji-in-code" in ids
+    # The 7 universal patterns added in v2.0 Phase 2c
+    assert "ai-marketing-vocab" in ids
+    assert "ai-conjunctive-opener" in ids
+    assert "ai-em-dash-overuse" in ids
+    assert "ai-todo-without-ticket-multilang" in ids
+    assert "ai-stub-body-comment-multilang" in ids
+    assert "ai-rule-of-three-padding" in ids
+    assert "ai-negative-parallelism" in ids
+    # v2.0 ai_style total = 12 (existing 5 + 7 new universal)
+    assert len(ids) >= 12
 
 
 def test_scan_catches_emphasis_label(tmp_path: Path) -> None:
