@@ -83,6 +83,56 @@ def test_scan_json_emits_valid_json(tmp_path: Path) -> None:
     assert data["score"]["value"] <= 100
 
 
+def test_scan_jsonl_emits_one_record_per_line(tmp_path: Path) -> None:
+    """--jsonl streams one JSON object per line.
+
+    Per W6/3: pipeable to `jq`/`grep`/log aggregators. The last line is always
+    a summary record with type='summary' carrying the schema_version + score.
+    Findings come first, summary last.
+    """
+    runner = CliRunner()
+    repo = _make_slop_repo(tmp_path)
+    result = runner.invoke(
+        main, ["scan", str(repo), "--jsonl", "--fail-on", "none"]
+    )
+    assert result.exit_code == 0
+    lines = [ln for ln in result.output.splitlines() if ln.strip()]
+    assert len(lines) >= 2  # at least 1 finding + 1 summary
+
+    # Every line is valid JSON
+    records = [json.loads(ln) for ln in lines]
+
+    # Last line is the summary
+    summary = records[-1]
+    assert summary["type"] == "summary"
+    assert summary["schema_version"] == 1
+    assert "score" in summary
+    assert summary["score"]["value"] >= 0
+
+    # Non-summary lines are findings
+    findings = records[:-1]
+    assert findings, "expected at least one finding line on a slop repo"
+    for f in findings:
+        assert f["type"] == "finding"
+        assert "rule_id" in f
+        assert "severity" in f
+        assert "file" in f
+        assert "line" in f
+
+
+def test_scan_jsonl_clean_repo_just_summary(tmp_path: Path) -> None:
+    """Clean repo emits exactly one line (the summary)."""
+    runner = CliRunner()
+    repo = _make_clean_repo(tmp_path)
+    result = runner.invoke(main, ["scan", str(repo), "--jsonl"])
+    assert result.exit_code == 0
+    lines = [ln for ln in result.output.splitlines() if ln.strip()]
+    assert len(lines) == 1
+    summary = json.loads(lines[0])
+    assert summary["type"] == "summary"
+    assert summary["score"]["value"] == 100
+
+
 def test_scan_explain_prints_rule_doc(tmp_path: Path) -> None:
     runner = CliRunner()
     result = runner.invoke(main, ["scan", "--explain", "hardcoded-api-key"])

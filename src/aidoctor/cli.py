@@ -42,6 +42,13 @@ def main() -> None:
     help="Emit a JSON report instead of the terminal-rendered output.",
 )
 @click.option(
+    "--jsonl",
+    "jsonl_output",
+    is_flag=True,
+    help="Stream findings as JSONL (one record per line; last line is summary). "
+    "Pipes cleanly to jq / grep / log aggregators.",
+)
+@click.option(
     "--explain",
     type=str,
     metavar="RULE",
@@ -75,6 +82,7 @@ def main() -> None:
 def scan_cmd(
     path: tuple[Path, ...],
     json_output: bool,
+    jsonl_output: bool,
     explain: str | None,
     diff_mode: bool,
     staged: bool,
@@ -119,7 +127,13 @@ def scan_cmd(
 
     score = compute_score(result.diagnostics)
 
-    if json_output:
+    if jsonl_output:
+        # Stream one JSON object per line: findings first, summary last.
+        for d in result.diagnostics:
+            click.echo(json.dumps({"type": "finding", **d.to_dict()}))
+        summary = {"type": "summary", **build_json_payload(result, score)}
+        click.echo(json.dumps(summary))
+    elif json_output:
         click.echo(json.dumps(build_json_payload(result, score), indent=2))
     else:
         render_terminal(result, score, console=Console())
