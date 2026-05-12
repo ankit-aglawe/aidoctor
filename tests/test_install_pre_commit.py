@@ -7,13 +7,11 @@ the file is text-edited so it survives whatever quirks the user has elsewhere.
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 from click.testing import CliRunner
 
 from aidoctor.cli import main
-
 
 # --- end-to-end CLI ---
 

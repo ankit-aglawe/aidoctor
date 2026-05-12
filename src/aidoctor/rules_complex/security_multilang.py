@@ -142,7 +142,7 @@ def detect_js_eval_on_variable(rule, file: Path, source: str) -> list[Diagnostic
                 fn_name = src_bytes[func.start_byte:func.end_byte].decode("utf-8", errors="replace")
                 if fn_name in ("eval", "Function"):
                     # Check first arg
-                    arg_nodes = [c for c in args.named_children]
+                    arg_nodes = list(args.named_children)
                     if arg_nodes and arg_nodes[0].type != "string":
                         diagnostics.append(_emit(rule, file, node.start_point[0] + 1, node.start_point[1]))
         for child in node.children:

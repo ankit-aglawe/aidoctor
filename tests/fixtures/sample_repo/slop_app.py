@@ -3,13 +3,12 @@
 # TODO: implement this properly
 # FIXME: hack to get tests passing
 # placeholder
-from os import *  # wildcard import
 import json
-import json  # duplicate
 import sys
+from os import *  # wildcard import
 
 if sys.version_info < (3, 11):
-    import tomli  # conditional import outside try
+    pass  # conditional import outside try
 
 # Hardcoded secrets across the file.
 API_KEY = "sk-prod-1234567890abcdefghij"
@@ -58,8 +57,9 @@ def unused_import_user():
 
 # --- async/sync mismatch ---
 import asyncio
-import requests
 import time
+
+import requests
 
 
 async def bad_async():

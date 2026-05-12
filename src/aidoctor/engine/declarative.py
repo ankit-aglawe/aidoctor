@@ -26,9 +26,10 @@ import logging
 import re
 import tokenize
 import unicodedata
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 from aidoctor.engine.error_renderer import ErrorContext, render_error
 from aidoctor.rules._base import Category, Diagnostic, Severity
@@ -266,17 +267,17 @@ def _detect_source_unicode_category(
     category = _category(rule.category)
 
     # Token types whose content we should NOT scan (string literal contents are intentional).
-    SKIP_TYPES = {tokenize.STRING}
+    skip_types = {tokenize.STRING}
     # f-string parts (3.12+); guard with getattr for older Pythons.
     for name in ("FSTRING_START", "FSTRING_MIDDLE", "FSTRING_END"):
         if hasattr(tokenize, name):
-            SKIP_TYPES.add(getattr(tokenize, name))
+            skip_types.add(getattr(tokenize, name))
 
     diagnostics: list[Diagnostic] = []
     try:
         tokens = tokenize.generate_tokens(io.StringIO(source).readline)
         for tok in tokens:
-            if tok.type in SKIP_TYPES:
+            if tok.type in skip_types:
                 continue
             line, base_col = tok.start
             for offset, ch in enumerate(tok.string):

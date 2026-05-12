@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import io
 import tokenize
-from typing import Iterator
+from collections.abc import Iterator
 
 from aidoctor.parsers import CommentNode
 

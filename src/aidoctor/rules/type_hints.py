@@ -6,8 +6,6 @@ return type annotations, and use `Generic` without binding a TypeVar.
 
 from __future__ import annotations
 
-from typing import Any as _Any  # avoid clash with cst.Any if any
-
 import libcst as cst
 
 from aidoctor.rules._base import Category, Rule, Severity

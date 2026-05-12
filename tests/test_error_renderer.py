@@ -33,21 +33,23 @@ def test_renders_attempting_line() -> None:
 def test_includes_file_when_given() -> None:
     from aidoctor.engine.error_renderer import ErrorContext, render_error
 
+    p = Path("/tmp/x.py")
     out = render_error(
         OSError("perm denied"),
-        ErrorContext(attempting="reading file", file=Path("/tmp/x.py")),
+        ErrorContext(attempting="reading file", file=p),
     )
-    assert "/tmp/x.py" in out
+    assert str(p) in out
 
 
 def test_includes_file_and_line_when_both_given() -> None:
     from aidoctor.engine.error_renderer import ErrorContext, render_error
 
+    p = Path("/tmp/x.py")
     out = render_error(
         SyntaxError("bad"),
-        ErrorContext(attempting="parsing", file=Path("/tmp/x.py"), line=42),
+        ErrorContext(attempting="parsing", file=p, line=42),
     )
-    assert "/tmp/x.py:42" in out
+    assert f"{p}:42" in out
 
 
 def test_omits_file_when_not_given() -> None:
@@ -83,11 +85,12 @@ def test_full_rendering_golden() -> None:
     """Snapshot the canonical format so drift across rescue sites is caught."""
     from aidoctor.engine.error_renderer import ErrorContext, render_error
 
+    p = Path("/repo/payments.py")
     out = render_error(
         OSError("permission denied"),
         ErrorContext(
             attempting="reading payments.py",
-            file=Path("/repo/payments.py"),
+            file=p,
             line=12,
             remediation="run with --jobs 1 to skip parallel mode and surface the error",
         ),
@@ -95,7 +98,7 @@ def test_full_rendering_golden() -> None:
     expected = (
         "ERROR OSError: permission denied\n"
         "  while: reading payments.py\n"
-        "  at:    /repo/payments.py:12\n"
+        f"  at:    {p}:12\n"
         "  fix:   run with --jobs 1 to skip parallel mode and surface the error"
     )
     assert out == expected

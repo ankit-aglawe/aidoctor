@@ -11,8 +11,8 @@ declares its set in `_COMMENT_NODE_TYPES`.
 from __future__ import annotations
 
 import logging
+from collections.abc import Iterator
 from functools import lru_cache
-from typing import Iterator
 
 import tree_sitter
 

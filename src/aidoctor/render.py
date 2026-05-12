@@ -16,12 +16,12 @@ from rich.text import Text
 
 from aidoctor import __version__
 from aidoctor.rules import CATEGORY_LABELS, Category, Diagnostic, Severity
+from aidoctor.scan import ScanResult
 from aidoctor.score import (
     LABEL_GREAT,
     LABEL_NEEDS_WORK,
     Score,
 )
-from aidoctor.scan import ScanResult
 
 BRAND_COLOR = "bright_cyan"
 BRAND_DIM = "cyan"
@@ -130,7 +130,7 @@ def render_banner(console: Console) -> None:
     banner.append("\n  ")
     banner.append(f"v{__version__}", style="color(45) dim")
     banner.append("  ·  ", style="dim")
-    banner.append("Better Python from your AI assistant.", style="color(45) dim")
+    banner.append("Remove AI fingerprints from your code.", style="color(45) dim")
     console.print(
         Panel(
             banner,

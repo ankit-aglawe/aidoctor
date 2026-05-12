@@ -71,9 +71,7 @@ def is_suppressed(rule_id: str, line: int, suppressions: FileSuppressions) -> bo
     if "*" in suppressions.file_wide or rule_id in suppressions.file_wide:
         return True
     line_rules = suppressions.by_line.get(line, frozenset())
-    if "*" in line_rules or rule_id in line_rules:
-        return True
-    return False
+    return "*" in line_rules or rule_id in line_rules
 
 
 def filter_diagnostics(

@@ -16,7 +16,6 @@ from pathlib import Path
 from aidoctor.rules import Category, Diagnostic, Severity
 from aidoctor.score import (
     ERROR_CAP,
-    ERROR_PENALTY,
     LABEL_CRITICAL,
     LABEL_GREAT,
     LABEL_NEEDS_WORK,

@@ -23,7 +23,6 @@ from libcst.metadata import PositionProvider
 from aidoctor.engine.declarative import register_python_detector
 from aidoctor.rules._base import Category, Diagnostic, Severity
 
-
 # Function names that accept a shell-style command + a `shell=True` kwarg.
 _SUBPROCESS_FNS = {
     "subprocess.run",

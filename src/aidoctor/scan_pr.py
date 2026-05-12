@@ -110,8 +110,8 @@ def _http_get(client: httpx.Client, url: str, *, retries: int = 2) -> httpx.Resp
                 logger.debug("rate limited, retrying once")
                 continue
             raise GitHubRateLimitError(
-                f"GitHub rate limited. "
-                f"Set GITHUB_TOKEN (https://github.com/settings/tokens) to raise the limit."
+                "GitHub rate limited. "
+                "Set GITHUB_TOKEN (https://github.com/settings/tokens) to raise the limit."
             )
         if response.status_code >= 400:
             raise GitHubNetworkError(

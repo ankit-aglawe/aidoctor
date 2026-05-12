@@ -15,14 +15,15 @@ from pathlib import Path
 
 import libcst as cst
 
+import aidoctor.rules_complex.ai_style  # noqa: F401 - 5 Python ai_style escape-hatch rules
+import aidoctor.rules_complex.per_lang_quality  # noqa: F401 - 17 new per-lang rules
+import aidoctor.rules_complex.python_quality  # noqa: F401 - 13 new Python quality rules
+
 # Import rules_complex submodules for their side effect of registering python-kind
 # detectors with the declarative engine. Multiprocess workers re-import this
 # module, which re-runs these registrations in each worker process.
 import aidoctor.rules_complex.security  # noqa: F401 - register OWASP detectors
 import aidoctor.rules_complex.security_multilang  # noqa: F401 - per-lang security
-import aidoctor.rules_complex.ai_style  # noqa: F401 - 5 Python ai_style escape-hatch rules
-import aidoctor.rules_complex.python_quality  # noqa: F401 - 13 new Python quality rules
-import aidoctor.rules_complex.per_lang_quality  # noqa: F401 - 17 new per-lang rules
 from aidoctor.engine.declarative import Rule, apply_rule, load_manifest
 from aidoctor.rules import RULES, Diagnostic, RuleContext
 
@@ -90,7 +91,7 @@ class ScanResult:
         return json.dumps(self.to_dict(), sort_keys=True)
 
 
-def build_json_payload(result: "ScanResult", score) -> dict:
+def build_json_payload(result: ScanResult, score) -> dict:
     """JSON shape for `aidoctor scan --json` and `aidoctor scan-pr --json`.
 
     Single source of truth for the schema. Bumping `schema_version` here is the

@@ -17,7 +17,6 @@ from click.testing import CliRunner
 
 from aidoctor.cli import main
 
-
 # --- fixtures ---
 
 

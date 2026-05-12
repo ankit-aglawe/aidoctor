@@ -12,10 +12,10 @@ import datetime as dt
 import logging
 import shutil
 import sys
+from collections.abc import Iterable
 from dataclasses import dataclass
 from importlib.resources import files
 from pathlib import Path
-from typing import Iterable
 
 import click
 from jinja2 import Environment, PackageLoader, select_autoescape
@@ -453,7 +453,7 @@ def cli_run(dry_run: bool, force: bool, yes: bool = False, interactive: bool | N
     _step(console, "◆", "bright_cyan", "Writing", "bold white")
     for r in results:
         if r.written:
-            backup_note = f"  (backed up old)" if r.backed_up_from else ""
+            backup_note = "  (backed up old)" if r.backed_up_from else ""
             console.print(Text(f"  ✓ {r.platform.display_name:<18} {r.path}{backup_note}", style="green"))
             written += 1
         else:

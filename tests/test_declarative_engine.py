@@ -13,7 +13,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-
 # --- manifest loader ---
 
 
@@ -111,7 +110,7 @@ def test_load_manifest_missing_file(tmp_path: Path) -> None:
 # --- comment_regex detect kind ---
 
 
-def _make_rule(**overrides) -> "object":
+def _make_rule(**overrides) -> object:
     from aidoctor.engine.declarative import Rule
 
     base = {
@@ -207,10 +206,9 @@ def test_comment_regex_diagnostic_has_correct_severity(tmp_path: Path) -> None:
 
 def test_python_kind_dispatches_to_callable(tmp_path: Path) -> None:
     """detect.kind=python escape hatch lets complex rules live in rules_complex/."""
-    from aidoctor.engine.declarative import apply_rule
-
     # Register a fake python-kind detector
     from aidoctor.engine import declarative
+    from aidoctor.engine.declarative import apply_rule
 
     def custom_detector(rule, file: Path, source: str):
         from aidoctor.rules._base import Category, Diagnostic, Severity
@@ -258,7 +256,7 @@ def test_unknown_detect_kind_raises_clear_error(tmp_path: Path) -> None:
 # --- source_unicode_category detect kind (powers ai-emoji-in-code) ---
 
 
-def _emoji_rule(**overrides) -> "object":
+def _emoji_rule(**overrides) -> object:
     from aidoctor.engine.declarative import Rule
 
     base = {

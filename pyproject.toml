@@ -65,11 +65,24 @@ python_files = ["test_*.py"]
 addopts = "-v --strict-markers"
 
 [tool.ruff]
-line-length = 100
+line-length = 120
 target-version = "py310"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP", "B", "C4", "SIM"]
+# libcst's visitor API requires PascalCase method names (visit_FunctionDef, leave_Call).
+ignore = ["N802"]
+
+[tool.ruff.lint.per-file-ignores]
+# Fixture files are intentionally bad — they're test inputs.
+"tests/fixtures/**" = ["ALL"]
+"tests/**" = ["N806", "E501", "F841", "B011"]
+"src/aidoctor/rules/**" = ["N806", "SIM102", "SIM103", "SIM110", "SIM114", "E501"]
+"src/aidoctor/rules_complex/**" = ["E501", "N806", "SIM102"]
+"src/aidoctor/engine/**" = ["E501", "SIM102"]
+# install.py builds long single-line shell snippets / markdown.
+"src/aidoctor/install.py" = ["E501", "N812"]
+"src/aidoctor/suppression.py" = ["SIM102"]
 
 [tool.aidoctor]
 fail_on = "none"

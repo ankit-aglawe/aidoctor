@@ -232,9 +232,7 @@ def detect_datetime_no_tz(rule, file: Path, source: str) -> list[Diagnostic]:
 def detect_pip_install_in_code(rule, file: Path, source: str) -> list[Diagnostic]:
     diagnostics: list[Diagnostic] = []
     for i, line in enumerate(source.splitlines(), 1):
-        if re.search(r"\bos\.system\([^)]*pip\s+install", line):
-            diagnostics.append(_emit(rule, file, i, 0))
-        elif re.search(r"subprocess\.[a-z_]+\(\s*\[[\"\']pip[\"\']\s*,\s*[\"\']install[\"\']", line):
+        if re.search(r"\bos\.system\([^)]*pip\s+install", line) or re.search(r"subprocess\.[a-z_]+\(\s*\[[\"\']pip[\"\']\s*,\s*[\"\']install[\"\']", line):
             diagnostics.append(_emit(rule, file, i, 0))
     return diagnostics
 

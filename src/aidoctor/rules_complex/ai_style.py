@@ -77,15 +77,6 @@ def detect_inflated_print(rule, file: Path, source: str) -> list[Diagnostic]:
                 return
             for arg in node.args:
                 if isinstance(arg.value, (cst.SimpleString, cst.FormattedString)):
-                    raw = source.split("\n")[node.func.value and 0]  # placeholder; use evaluated
-                    try:
-                        val = arg.value.evaluated_value if hasattr(arg.value, "evaluated_value") else None
-                    except Exception:  # noqa: BLE001
-                        val = None
-                    text = val if isinstance(val, str) else source[
-                        wrapper.resolve(PositionProvider)[arg.value].start.column:
-                    ]
-                    # Simpler: just read the source slice for the arg
                     p = wrapper.resolve(PositionProvider)[arg.value]
                     lines = source.splitlines()
                     line_str = lines[p.start.line - 1] if p.start.line - 1 < len(lines) else ""
@@ -277,7 +268,8 @@ def detect_explanation_comment(rule, file: Path, source: str) -> list[Diagnostic
         raw = re.split(r"[^a-zA-Z]+|(?<=[a-z])(?=[A-Z])", s)
         return {w.lower()[:5] for w in raw if len(w) > 2}
 
-    import tokenize, io
+    import io
+    import tokenize
     try:
         tokens = list(tokenize.generate_tokens(io.StringIO(source).readline))
     except tokenize.TokenizeError:

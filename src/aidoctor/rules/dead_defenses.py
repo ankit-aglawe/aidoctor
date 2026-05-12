@@ -44,9 +44,7 @@ class BareExceptPassRule(Rule):
         if not isinstance(only.body[0], cst.Pass):
             return
         # Now check the except clause itself — bare except or `except Exception`.
-        if node.type is None:
-            self.report(node)
-        elif isinstance(node.type, cst.Name) and node.type.value in ("Exception", "BaseException"):
+        if node.type is None or isinstance(node.type, cst.Name) and node.type.value in ("Exception", "BaseException"):
             self.report(node)
 
 
@@ -133,9 +131,7 @@ class RedundantNullCheckAfterIsinstanceRule(Rule):
             return
         left, right = node.left, node.right
         # Pattern: `x is not None and isinstance(x, T)` (or reversed).
-        if _is_not_none_check(left) and _is_isinstance_check(right, _is_not_none_target(left)):
-            self.report(node)
-        elif _is_not_none_check(right) and _is_isinstance_check(left, _is_not_none_target(right)):
+        if _is_not_none_check(left) and _is_isinstance_check(right, _is_not_none_target(left)) or _is_not_none_check(right) and _is_isinstance_check(left, _is_not_none_target(right)):
             self.report(node)
 
 

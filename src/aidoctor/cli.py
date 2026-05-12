@@ -18,6 +18,8 @@ from rich.console import Console
 from aidoctor.discover import NoPythonFilesError
 from aidoctor.install import (
     cli_run as install_cli_run,
+)
+from aidoctor.install import (
     install_pre_commit,
     split_frontmatter,
 )
