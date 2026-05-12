@@ -143,41 +143,50 @@ def compute_exit_code(score, fail_on: str) -> int:
 def scan_file(path: Path) -> tuple[list[Diagnostic], str | None, str]:
     """Scan one file. Returns (diagnostics, parse_error_or_None, source_text).
 
-    Source text is returned so callers can apply inline suppression filters
-    without re-reading the file from disk.
+    Multi-language at v2.0:
+        * .py  → libcst path (legacy Python RULES) + manifest rules for "python"
+        * other → manifest rules for the matching language only (no libcst)
 
-    Top-level function so it pickles cleanly for multiprocessing.Pool.
+    Source text is returned so callers can apply inline suppression filters
+    without re-reading the file from disk. Top-level so it pickles for
+    multiprocessing.Pool.
     """
+    from aidoctor.parsers import language_for_file
+
+    target_lang = language_for_file(path)
+
     try:
         source = path.read_text(encoding="utf-8", errors="replace")
     except OSError as e:
         return [], f"could not read file: {e}", ""
 
-    try:
-        module = cst.parse_module(source)
-    except cst.ParserSyntaxError as e:
-        return [], f"libcst parse error: {e}", source
-
-    wrapper = cst.MetadataWrapper(module)
     context = RuleContext(file=path, source=source)
 
-    for rule_class in RULES:
-        rule = rule_class(context)
+    # Python gets the libcst legacy-rule pass.
+    if target_lang == "python":
         try:
-            wrapper.visit(rule)
-        # aidoctor: disable=except-exception-swallowing
-        except Exception as e:  # noqa: BLE001 - intentional: one broken rule must not kill the scan
-            logger.warning("rule %s failed on %s: %s", rule_class.rule_id, path, e)
+            module = cst.parse_module(source)
+        except cst.ParserSyntaxError as e:
+            return [], f"libcst parse error: {e}", source
+        wrapper = cst.MetadataWrapper(module)
+        for rule_class in RULES:
+            rule = rule_class(context)
+            try:
+                wrapper.visit(rule)
+            # aidoctor: disable=except-exception-swallowing
+            except Exception as e:  # noqa: BLE001
+                logger.warning("rule %s failed on %s: %s", rule_class.rule_id, path, e)
 
-    # Apply JSONL manifest rules (security, ai_style, etc.) for matching languages.
-    for manifest_rule in _load_manifest_rules():
-        if "python" not in manifest_rule.langs:
-            continue
-        try:
-            context.diagnostics.extend(apply_rule(manifest_rule, path, source))
-        # aidoctor: disable=except-exception-swallowing
-        except Exception as e:  # noqa: BLE001 - one broken manifest rule must not kill the scan
-            logger.warning("manifest rule %s failed on %s: %s", manifest_rule.id, path, e)
+    # Apply JSONL manifest rules whose `langs` includes the file's language.
+    if target_lang is not None:
+        for manifest_rule in _load_manifest_rules():
+            if target_lang not in manifest_rule.langs:
+                continue
+            try:
+                context.diagnostics.extend(apply_rule(manifest_rule, path, source))
+            # aidoctor: disable=except-exception-swallowing
+            except Exception as e:  # noqa: BLE001
+                logger.warning("manifest rule %s failed on %s: %s", manifest_rule.id, path, e)
 
     return context.diagnostics, None, source
 
@@ -185,16 +194,21 @@ def scan_file(path: Path) -> tuple[list[Diagnostic], str | None, str]:
 def scan(paths: list[Path], *, jobs: int | None = None) -> ScanResult:
     """Scan all files at the given paths.
 
+    v2.0: discovers ALL supported language files (Python + Rust + Go + JS + TS)
+    and dispatches each through scan_file() with per-language routing.
+
     jobs:
         None  -> use min(cpu_count, len(files)) workers if files > PARALLEL_THRESHOLD
         1     -> single-threaded (useful for debugging and tiny scans)
         N>1   -> use exactly N workers
     """
-    from aidoctor.discover import find_python_files
+    from aidoctor.discover import find_source_files
     from aidoctor.suppression import filter_diagnostics
+    # Keep `find_python_files` import name for tests that pin to it.
+    find_python_files = find_source_files  # noqa: F841
 
     result = ScanResult()
-    files = find_python_files(paths)
+    files = find_source_files(paths)
     source_by_file: dict[Path, str] = {}
 
     if jobs is None:

@@ -154,7 +154,7 @@ def test_scan_no_python_files_exits_two(tmp_path: Path) -> None:
     (tmp_path / "readme.md").write_text("nothing here\n")
     result = runner.invoke(main, ["scan", str(tmp_path)])
     assert result.exit_code == 2
-    assert "No Python files" in result.output
+    assert "source files found" in result.output  # v2.0 multi-lang error message
 
 
 def test_skill_generic_strips_frontmatter() -> None:

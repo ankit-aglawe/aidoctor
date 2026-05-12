@@ -11,7 +11,8 @@ Public surface (called from scan.py at integration time):
     register_python_detector(id, fn)
 
 Supported detect kinds at this phase:
-    comment_regex             — regex against tokenized comments (not bytes)
+    comment_regex             — Python-only legacy (uses libcst/tokenize)
+    comment_pattern           — multi-language; uses parser-extracted comment nodes
     source_unicode_category   — unicode category match in source, skips string literals
     ast_call_with_kwarg       — match function call shape + optional kwarg/value
     python                    — dispatch to a registered callable
@@ -130,6 +131,8 @@ def apply_rule(rule: Rule, file: Path, source: str | None = None) -> list[Diagno
     kind = rule.detect.get("kind")
     if kind == "comment_regex":
         return _detect_comment_regex(rule, file, source)
+    if kind == "comment_pattern":
+        return _detect_comment_pattern(rule, file, source)
     if kind == "source_unicode_category":
         return _detect_source_unicode_category(rule, file, source)
     if kind == "ast_call_with_kwarg":
@@ -145,7 +148,8 @@ def apply_rule(rule: Rule, file: Path, source: str | None = None) -> list[Diagno
         return fn(rule, file, source)
     raise ValueError(
         f"rule {rule.id}: unknown detect.kind {kind!r}. "
-        f"Supported kinds: comment_regex, source_unicode_category, ast_call_with_kwarg, python."
+        f"Supported kinds: comment_regex, comment_pattern, source_unicode_category, "
+        f"ast_call_with_kwarg, python."
     )
 
 
@@ -185,6 +189,65 @@ def _detect_comment_regex(rule: Rule, file: Path, source: str) -> list[Diagnosti
         return []
 
     return diagnostics
+
+
+def _detect_comment_pattern(rule: Rule, file: Path, source: str) -> list[Diagnostic]:
+    """Multi-language comment regex match using parser-extracted comment nodes.
+
+    Replaces `comment_regex` for cross-language rules. Routes to the right
+    parser via the file's extension. Avoids the regex-on-bytes FP class
+    (e.g. matching `// NOTE:` inside a string literal) because the parser
+    only yields actual comment nodes.
+    """
+    from aidoctor.parsers import language_for_file
+
+    target_lang = language_for_file(file)
+    if target_lang is None:
+        return []
+    # If the rule restricts to specific languages and this file isn't one, skip.
+    if rule.langs and target_lang not in rule.langs:
+        return []
+
+    pattern = re.compile(rule.detect["pattern"])
+    severity = Severity(rule.severity) if rule.severity in {"error", "warning", "critical"} else Severity.WARNING
+    category = _category(rule.category)
+    diagnostics: list[Diagnostic] = []
+
+    # Get comments from the appropriate parser
+    comments_iter = _extract_comments(target_lang, source)
+    for c in comments_iter:
+        if pattern.search(c.text):
+            diagnostics.append(
+                Diagnostic(
+                    rule_id=rule.id,
+                    severity=severity,
+                    category=category,
+                    file=file,
+                    line=c.line,
+                    column=c.column,
+                    message=rule.message,
+                    help=rule.help,
+                    url=rule.ref or "",
+                )
+            )
+    return diagnostics
+
+
+def _extract_comments(language: str, source: str):
+    """Route to the right comment-extraction implementation for `language`."""
+    from aidoctor.parsers import _python as py_parser
+
+    if language == "python":
+        yield from py_parser.extract_comments(source)
+        return
+    if language in ("rust", "go", "javascript", "typescript"):
+        from aidoctor.parsers import _tree_sitter as ts_parser
+        src_bytes = source.encode("utf-8", errors="replace") if isinstance(source, str) else source
+        tree = ts_parser.parse(src_bytes, language)
+        if tree is None:
+            return
+        yield from ts_parser.extract_comments(tree, src_bytes, language)
+        return
 
 
 def _detect_source_unicode_category(
