@@ -133,3 +133,45 @@ The grade does NOT mean "delete LOW rules." It means: be honest with users about
 **Constant-allowance policy:** `_is_constant_literal()` covers string/bytes/int/float/bool/None plus tuples/lists/sets/dicts of literals. A `Name` reference (even to a module-level constant) is NOT constant — we have no data-flow analysis at v1. This is intentionally conservative on the "is X a constant?" question to keep FPs low; expect some false NEGATIVES where the value is constant-via-flow.
 
 **OWASP overlap with existing tooling:** Bandit catches all 3 (B602, B301/B403, B307) with similar FP rates. The aidoctor pack's unique value is bundling them with the rest of the AI-slop catalog under one zero-config CLI + the score calibration that puts them in front of users instead of buried in a noqa file.
+
+---
+
+## Real-world FP test — 2026-05-12 (v2.0 pre-ship)
+
+**Method:** Scanned 3 well-maintained pre-AI Python codebases (`psf/requests` v2.32.3, `pallets/flask` 3.0.3, `encode/httpx` 0.27.2). These predate strong AI coding adoption and represent the "false positive ground truth" — every finding here is either an FP, a legitimately AI-irrelevant style nit, or (rarely) a real bug humans missed.
+
+**Harness:** `uv run python evals/real_world_fp/run_fp_test.py` (reproducible; pinned commits + summary report).
+
+### Critical FP discovered + fixed pre-ship
+
+**`ai-emoji-in-code` was catching backticks** (`` ` ``, U+0060) because Unicode category `Sk` (Symbol, Modifier) was in the rule's scope. Backticks are universal in code-style comments like `` # Form: `diff --git` ``.
+
+- aidoctor scanning its own src/: **99 findings → 9 findings** after dropping `Sk` from the rule (kept only `So`, the actual emoji block).
+- Lesson: toy fixtures (`# ✅ Done`) catch the happy path; only real code surfaces the category-overreach bug.
+
+### Known v2.0 noise — refinement tracked for v2.1
+
+Five v1.1 legacy rules account for ~85% of total findings on these mature codebases. They're CORRECT for fresh AI-generated code (where annotations, imports, and exception patterns are sloppy) but FIRE HARD on mature human-written code:
+
+| Rule | Real-world FPs (3 repos / 66 files) | v2.0 severity | v2.1 refinement plan |
+|---|---|---|---|
+| `missing-return-type` | 172 (requests alone) | warning | Only fire if the function has any other type annotation — signals "this code is typing-aware" |
+| `import-without-use` | 73 | warning | Respect `__all__` exports; `from x import y` where `y in __all__` is intentional re-export |
+| `conditional-import-outside-try` | 34 | warning | Skip if a sibling `try/except ImportError` exists in the file |
+| `any-everywhere` | 17 | warning | Only fire when `Any` is the sole annotation in a function signature (not mixed with specific types) |
+| `wildcard-import` | 16 | warning | Exempt `__init__.py` files (canonical Python re-export idiom) |
+
+**None of these block CI.** They're warning-severity, so `--fail-on=error` (the v2.0 default) lets them through. They show as advisory in scan output. The score formula caps any error at 69; warnings cost 2 points per unique rule, so even 5 noisy warnings in a real codebase = ~10 point hit on a 100-point scale — still well above the 50 "Needs work" threshold.
+
+### Moat rules — real-world FP rate is LOW
+
+The actual v2.0 moat rules (5 ai_style + 3 OWASP) fire **8 + 4 = 12 times total** across 3,300+ lines of mature code:
+
+- **ai_style:** 8 total (7 section-divider in old-style banner comments; 1 emphasis-label `# NOTE:` in httpx — all defensible flags in older code, expected behavior).
+- **OWASP:** 4 total (flask uses pickle.loads in sessions module + eval in templating — both intentional library design; manual review confirms).
+
+That's a **0.36% finding rate per line of code** on the moat rules across mature codebases — orders of magnitude lower than the noisy v1.1 legacy rules. The moat is healthy.
+
+### v2.0 ship implication
+
+These rule severities are unchanged at v2.0 to avoid silently breaking v1.1 users who depend on them. v2.1 will refine the 5 noisy rules per the plan above + add a `[tool.aidoctor] disabled_rules = [...]` config option for project-level suppression.

@@ -97,8 +97,13 @@ def _fix_strip_label(line: str, line_no: int) -> RewriteResult:
 
 
 def _fix_delete_emoji(line: str, line_no: int) -> RewriteResult:
-    """Remove characters in Unicode 'So'/'Sk' categories (emojis + symbol modifiers)."""
-    cleaned = "".join(ch for ch in line if unicodedata.category(ch) not in {"So", "Sk"})
+    """Remove characters in Unicode 'So' category (emojis like ✓ ✨ 🎉).
+
+    `Sk` (Symbol, Modifier) was dropped after real-world testing on aidoctor's
+    own source revealed all 90 'emoji' findings were the backtick character
+    (U+0060 GRAVE ACCENT, Sk) used in code-style comments like `# Form: \\`...\\``.
+    """
+    cleaned = "".join(ch for ch in line if unicodedata.category(ch) != "So")
     # Collapse runs of internal whitespace introduced by emoji removal.
     cleaned = re.sub(r"  +", " ", cleaned).rstrip()
     if cleaned == line.rstrip():
