@@ -73,18 +73,21 @@ Files scanned: **24** · Findings: **65** · Unique rules: **20**
 | `ai-rule-of-three-padding` | warning | 1 |
 
 ## ripgrep @ `14.1.1`
-Files scanned: **20** · Findings: **3** · Unique rules: **2**
+Files scanned: **20** · Findings: **6** · Unique rules: **3**
 
 | Rule | Severity | Occurrences |
 |---|---|---|
+| `rust-let-underscore-on-result` | warning | 3 |
 | `ai-conjunctive-opener` | warning | 2 |
 | `rust-unsafe-without-safety-comment` | warning | 1 |
 
 ## cobra @ `v1.8.1`
-Files scanned: **36** · Findings: **7** · Unique rules: **4**
+Files scanned: **36** · Findings: **21** · Unique rules: **6**
 
 | Rule | Severity | Occurrences |
 |---|---|---|
+| `go-fmt-errorf-verb-v` | warning | 9 |
+| `go-defer-in-loop` | warning | 5 |
 | `ai-todo-without-ticket-multilang` | warning | 4 |
 | `ai-section-divider` | warning | 1 |
 | `ai-emphasis-label` | warning | 1 |
@@ -110,15 +113,18 @@ Total files scanned: **133**
 | `ai-useless-docstring` | 14 |
 | `todo-without-ticket` | 10 |
 | `duplicate-import` | 9 |
+| `go-fmt-errorf-verb-v` | 9 |
 | `ai-section-divider` | 8 |
 | `except-exception-swallowing` | 8 |
 | `ai-unused-fstring` | 7 |
 | `nested-loop-append` | 6 |
 | `repeated-dict-lookup` | 5 |
+| `go-defer-in-loop` | 5 |
 | `ai-todo-without-ticket-multilang` | 5 |
 | `ai-generic-vars-in-long-fn` | 4 |
 | `any-everywhere` | 4 |
 | `ai-overzealous-typing-import` | 3 |
+| `rust-let-underscore-on-result` | 3 |
 | `stub-comment` | 2 |
 | `eval-or-exec-on-non-constant` | 2 |
 | `pickle-loads-on-non-constant` | 2 |
