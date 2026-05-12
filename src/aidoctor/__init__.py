@@ -25,6 +25,6 @@ from __future__ import annotations
 from aidoctor.scan import ScanResult
 from aidoctor.scan import scan as scan_paths
 
-__version__ = "1.1.0"
+__version__ = "2.0.0"
 
 __all__ = ["ScanResult", "scan_paths", "__version__"]

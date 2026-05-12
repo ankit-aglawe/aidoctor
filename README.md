@@ -2,12 +2,13 @@
   <img src="https://raw.githubusercontent.com/ankit-aglawe/aidoctor/main/docs/banner.png" alt="aidoctor" width="660" />
 </p>
 
-> Your agent writes bad code. This catches it.
+> Your agent writes bad code. `/aidoctor:deai` finds the AI fingerprints and removes them.
 
-**AIDoctor is the multi-language coding harness for AI agents.** Two things in one:
+**AIDoctor is the coding harness with a deterministic verifier under it.** New in v2.0:
 
-1. **AI-slop removal across any code.** Orchestration skills (`scan`, `simplify`, `audit`, `rules`) catch the patterns LLMs reflexively produce — bare `except`, missing cleanup, stale closures, hardcoded secrets, `.unwrap()` in production Rust, `data, _ := ` in Go, `as User` casts in TypeScript, and dozens more. Five language rule packs (**Python, React, Rust, JS/TS, Go — 107 rules**) ground the review in real syntax; the harness reviews qualitatively wherever specifics aren't loaded.
-2. **Opinionated robust, production-grade, non-overengineered patterns.** `simplify` spawns three parallel reviewers (reuse / quality / efficiency) to fight over-engineering at the diff level. `audit` applies a six-dimensional review (structure / deps / security / exceptions / standards / coverage) at the project level. Same decision-brief format gstack users already trust.
+1. **`/aidoctor:deai` — the moat skill.** Detects the *visible* AI tells in your code (`# NOTE:` / `# IMPORTANT:` emphasis labels, `# ====== SECTION ======` ASCII dividers, self-praise comments like `# Pythonic`/`# elegant`, hedge leakage like `# As an AI, I...`, emojis in source code), proposes a deterministic AST-driven fix for each, and applies them with per-finding user approval. Python at v2.0; multi-language in v2.1 (the rules are language-agnostic; the apply layer lands with the tree-sitter scanner).
+2. **`/aidoctor:scan` — calibrated AI-slop linter.** 33 Python rules across 10 categories (bare `except`, hardcoded secrets, async/sync mismatch, the new 3 OWASP-3 security sinks, the 5 ai_style rules, and more). New in v2.0: score caps when `error`-severity rules fire (any error → 69; any critical → 39), `--fail-on=error` is the default so CI works out of the box, `--jsonl` streams findings for `jq`/`grep` pipelines.
+3. **Skill packs for other languages.** React, Rust, JS/TS, Go — 78 rules across 4 packs steering Claude Code / Cursor / Codex / Gemini at generation time. v2.1 brings these into the deterministic scanner via tree-sitter.
 
 Works across **Claude Code, Cursor, Codex, Gemini CLI, OpenCode.** Same skill catalog, every major agent.
 
@@ -26,10 +27,12 @@ Register the marketplace and install the plugin:
 /plugin install aidoctor@ankit-aglawe
 ```
 
-After install, just talk to Claude in plain English. Eleven skills load:
+After install, just talk to Claude in plain English. Thirteen skills load:
 
 | You want to | Invoke | Or say |
 |---|---|---|
+| **Remove visible AI fingerprints** | **`/aidoctor:deai`** | "deai this file", "remove AI tells" |
+| **Get oriented (first time)** | `/aidoctor:welcome` | "show me aidoctor", "demo it" |
 | **Write** Python (no action needed) | `python-rules` auto-loads | n/a |
 | **Write** React (no action needed) | `react-rules` auto-loads | n/a |
 | **Write** Rust (no action needed) | `rust-rules` auto-loads | n/a |
@@ -39,7 +42,8 @@ After install, just talk to Claude in plain English. Eleven skills load:
 | **Review** your last diff | `/aidoctor:simplify` | "review what I just changed" |
 | **Audit** the whole repo | `/aidoctor:audit` | "audit this repo", "is it prod-ready?" |
 | **Browse** the rule catalog | `/aidoctor:rules` | "list AIDoctor rules" |
-| **Get oriented** | `/aidoctor:help` | "how do I use AIDoctor?" |
+| **Get oriented (the catalog)** | `/aidoctor:help` | "how do I use AIDoctor?" |
+| **Add the pre-commit hook** | `aidoctor install --pre-commit` | "set up the git hook" |
 
 Lost? Type `/aidoctor:help` for the full decision tree.
 
@@ -98,7 +102,7 @@ Or paste this prompt into the agent:
 
 ## CLI
 
-> The skill harness is the primary surface as of v1.0. The CLI on PyPI is `aidoctor 0.1.0` — Python-only deterministic scan, kept for humans and CI on Python projects. Multi-language deterministic scanning (Rust, Go, JS/TS) ships in v2.0+ on a tree-sitter backbone.
+> The skill harness is the primary surface. The CLI on PyPI is `aidoctor 2.0.0` — Python-only deterministic scanner (33 rules: 25 legacy + 3 OWASP-3 + 5 ai_style) with full `aidoctor deai` / `aidoctor doctor` / `aidoctor install --pre-commit` subcommands. Multi-language deterministic scanning (Rust, Go, JS/TS) ships in v2.1 on a tree-sitter backbone — the rule packs for those languages currently steer agents at generation time via `*-rules` SKILL packs.
 
 For humans and CI (Python projects only):
 
@@ -167,14 +171,22 @@ Or call the CLI directly in any workflow:
 - run: uvx aidoctor scan . --fail-on error
 ```
 
-Pre-commit:
+Pre-commit (one-liner setup):
+
+```bash
+aidoctor install --pre-commit       # writes the block below, idempotent
+pre-commit install                  # activates the hook in .git/hooks/
+```
+
+Or manually:
 
 ```yaml
 repos:
   - repo: https://github.com/ankit-aglawe/aidoctor
-    rev: v0.1.0
+    rev: v2.0.0
     hooks:
-      - id: aidoctor
+      - id: aidoctor              # diff mode (only scans changed files)
+        args: [--fail-on, error]
 ```
 
 ## Configuration
