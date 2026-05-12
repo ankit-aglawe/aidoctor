@@ -167,6 +167,53 @@ def _print_rule_doc(rule_id: str) -> None:
     sys.exit(EXIT_USAGE)
 
 
+@main.command(name="deai")
+@click.argument("path", nargs=-1, type=click.Path(exists=True, path_type=Path))
+@click.option(
+    "--json",
+    "json_output",
+    is_flag=True,
+    help="Emit a structured JSON report. Use with the /aidoctor:deai skill.",
+)
+def deai_cmd(path: tuple[Path, ...], json_output: bool) -> None:
+    """Find AI fingerprints in code and propose fixes.
+
+    The headline moat command. Scans PATH(s), filters to ai-style HIGH-confidence
+    rules (the canonical AI tells: NOTE/IMPORTANT labels, section dividers,
+    self-praise comments, emojis-in-code, hedge leakage), and for each finding
+    proposes a deterministic AST-driven fix.
+
+    Use --json to feed the /aidoctor:deai skill, which orchestrates interactive
+    apply via your agent's file-edit tools.
+
+    Exit code is always 0 — /deai is discovery, not a CI gate. Wire CI through
+    `aidoctor scan --fail-on error` instead.
+    """
+    from aidoctor.engine.deai import run as deai_run
+
+    targets = list(path) if path else [Path.cwd()]
+    result = deai_run(targets)
+
+    if json_output:
+        click.echo(json.dumps(result.to_dict(), indent=2))
+        sys.exit(0)
+
+    # Default human output: terse summary + per-finding line.
+    n = len(result.findings)
+    if n == 0:
+        click.echo("aidoctor /deai: 0 AI fingerprints found. Looks clean.")
+        sys.exit(0)
+    click.echo(f"aidoctor /deai: {n} AI fingerprint(s) found across {result.files_scanned} file(s).")
+    click.echo(f"AI residue score: {result.ai_residue_score}/100 (100 = clean)")
+    click.echo("")
+    for f in result.findings:
+        d = f.diagnostic
+        click.echo(f"  {d.file}:{d.line}  {d.rule_id}")
+    click.echo("")
+    click.echo("To apply fixes, invoke /aidoctor:deai in your agent (or pipe --json into a script).")
+    sys.exit(0)
+
+
 @main.command(name="install")
 @click.option(
     "--dry-run",
