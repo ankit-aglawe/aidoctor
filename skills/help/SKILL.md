@@ -21,12 +21,20 @@ Print this exactly (in plain Markdown):
 ```
 aidoctor — the coding harness that catches what your AI agent writes badly.
 
-THE MOAT
+THE MOAT (cross-language, prevention + detection)
 ─────────────────────────────────── ────────────────────────────────────
 Remove visible AI fingerprints      /aidoctor:deai          (headline)
-   (NOTE labels, emojis in code,
-    section dividers, self-praise,
-    hedge leakage)
+   from existing code
+Prevent emitting AI fingerprints    ai-style                (auto-loads)
+   while writing new code           (language-agnostic;
+                                     covers all 5 supported langs +
+                                     anything else you're writing)
+   Patterns: emojis, NOTE labels,
+   section dividers, self-praise,
+   hedge leakage, inflated prints,
+   useless docstrings, generic vars,
+   obvious type annotations,
+   explanation comments
 
 EVERYTHING ELSE
 ─────────────────────────────────── ────────────────────────────────────
