@@ -15,9 +15,34 @@ from pathlib import Path
 
 import libcst as cst
 
+# Import rules_complex submodules for their side effect of registering python-kind
+# detectors with the declarative engine. Multiprocess workers re-import this
+# module, which re-runs these registrations in each worker process.
+import aidoctor.rules_complex.security  # noqa: F401 - register OWASP detectors
+from aidoctor.engine.declarative import Rule, apply_rule, load_manifest
 from aidoctor.rules import RULES, Diagnostic, RuleContext
 
 logger = logging.getLogger(__name__)
+
+
+_MANIFEST_RULES_CACHE: list[Rule] | None = None
+
+
+def _load_manifest_rules() -> list[Rule]:
+    """Discover and load every JSONL manifest under rules/manifest/. Cached per process."""
+    global _MANIFEST_RULES_CACHE
+    if _MANIFEST_RULES_CACHE is not None:
+        return _MANIFEST_RULES_CACHE
+    manifests_dir = Path(__file__).parent / "rules" / "manifest"
+    rules: list[Rule] = []
+    if manifests_dir.exists():
+        for jsonl in sorted(manifests_dir.glob("*.jsonl")):
+            try:
+                rules.extend(load_manifest(jsonl))
+            except FileNotFoundError:
+                continue
+    _MANIFEST_RULES_CACHE = rules
+    return rules
 
 # Files under this count run serial — pool startup cost dominates for tiny scans.
 PARALLEL_THRESHOLD = 4
@@ -143,6 +168,16 @@ def scan_file(path: Path) -> tuple[list[Diagnostic], str | None, str]:
         # aidoctor: disable=except-exception-swallowing
         except Exception as e:  # noqa: BLE001 - intentional: one broken rule must not kill the scan
             logger.warning("rule %s failed on %s: %s", rule_class.rule_id, path, e)
+
+    # Apply JSONL manifest rules (security, ai_style, etc.) for matching languages.
+    for manifest_rule in _load_manifest_rules():
+        if "python" not in manifest_rule.langs:
+            continue
+        try:
+            context.diagnostics.extend(apply_rule(manifest_rule, path, source))
+        # aidoctor: disable=except-exception-swallowing
+        except Exception as e:  # noqa: BLE001 - one broken manifest rule must not kill the scan
+            logger.warning("manifest rule %s failed on %s: %s", manifest_rule.id, path, e)
 
     return context.diagnostics, None, source
 

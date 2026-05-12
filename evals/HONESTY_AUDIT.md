@@ -114,3 +114,22 @@ The grade does NOT mean "delete LOW rules." It means: be honest with users about
 **Honesty in the SKILL files (v1.1):** add a short note that not every rule fires every time — the HIGH ones (called out in the in-skill priority order) are the real-world bread and butter. This keeps users from over-trusting the rule pack as exhaustive.
 
 **No rules are being removed in v1.1.** This audit calibrates expectations; we'll prune in v1.2 if data supports it.
+
+---
+
+## owasp.jsonl (3 rules, v2.0, Python-only) — Security rule pack
+
+**Date:** 2026-05-12
+**Method:** Manual fixture validation. v1 rules are syntactic-only (no taint analysis) so the trigger is observable from a single line. Real-world FP-rate testing scheduled for v1.5 per TODOS.md.
+
+| Rule ID | Confidence | Severity | Trigger |
+|---|---|---|---|
+| `shell-true-with-variable` | **HIGH** | warning (v1) | `subprocess.run(X, shell=True)` where X is non-constant. AI generates `cmd = build(...); subprocess.run(cmd, shell=True)` reflexively. Bandit B602. Constant strings explicitly allowed. |
+| `pickle-loads-on-non-constant` | **HIGH** | warning (v1) | `pickle.loads(X)` where X is non-constant. Webhook handlers, request bodies, file contents. Bandit B301/B403. |
+| `eval-or-exec-on-non-constant` | **HIGH** | warning (v1) | `eval(X)` / `exec(X)` where X is non-constant. Most common in calculator-style endpoints + DSL parsers. Bandit B307. |
+
+**Severity policy:** all 3 ship at `warning` at v1 (per outside-voice critique + user ACCEPT in CEO/eng review). Promotion to `error` is gated on FP-rate measurement in v1.5 (target: <5% FP rate on 5 real-world Python repos).
+
+**Constant-allowance policy:** `_is_constant_literal()` covers string/bytes/int/float/bool/None plus tuples/lists/sets/dicts of literals. A `Name` reference (even to a module-level constant) is NOT constant — we have no data-flow analysis at v1. This is intentionally conservative on the "is X a constant?" question to keep FPs low; expect some false NEGATIVES where the value is constant-via-flow.
+
+**OWASP overlap with existing tooling:** Bandit catches all 3 (B602, B301/B403, B307) with similar FP rates. The aidoctor pack's unique value is bundling them with the rest of the AI-slop catalog under one zero-config CLI + the score calibration that puts them in front of users instead of buried in a noqa file.
