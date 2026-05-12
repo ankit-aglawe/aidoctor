@@ -29,13 +29,36 @@ class RuleExecutionError(Exception):
 
 @dataclass
 class ScanResult:
-    """Aggregated result of scanning a set of files."""
+    """Aggregated result of scanning a set of files.
+
+    Public API (covered by SemVer): the `diagnostics`, `files_scanned`,
+    `files_skipped`, `parse_errors` fields and the `score`, `to_dict`, `to_json`
+    accessors. `rule_errors` is currently internal.
+    """
 
     diagnostics: list[Diagnostic] = field(default_factory=list)
     files_scanned: int = 0
     files_skipped: int = 0
     parse_errors: list[tuple[Path, str]] = field(default_factory=list)
     rule_errors: list[tuple[Path, str, str]] = field(default_factory=list)
+    @property
+    def score(self):
+        """Calibrated 0-100 score for the scan. Cached on first access."""
+        cached = self.__dict__.get("_score")
+        if cached is None:
+            from aidoctor.score import compute_score
+            cached = compute_score(self.diagnostics)
+            self.__dict__["_score"] = cached
+        return cached
+
+    def to_dict(self) -> dict:
+        """v1 JSON schema dict. Stable shape for workflow skills + CI consumers."""
+        return build_json_payload(self, self.score)
+
+    def to_json(self) -> str:
+        """JSON serialization of `to_dict()`. Deterministic key order."""
+        import json
+        return json.dumps(self.to_dict(), sort_keys=True)
 
 
 def build_json_payload(result: "ScanResult", score) -> dict:
