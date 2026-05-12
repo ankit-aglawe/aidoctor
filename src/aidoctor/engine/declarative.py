@@ -13,6 +13,7 @@ Public surface (called from scan.py at integration time):
 Supported detect kinds at this phase:
     comment_regex             — regex against tokenized comments (not bytes)
     source_unicode_category   — unicode category match in source, skips string literals
+    ast_call_with_kwarg       — match function call shape + optional kwarg/value
     python                    — dispatch to a registered callable
 """
 
@@ -131,6 +132,8 @@ def apply_rule(rule: Rule, file: Path, source: str | None = None) -> list[Diagno
         return _detect_comment_regex(rule, file, source)
     if kind == "source_unicode_category":
         return _detect_source_unicode_category(rule, file, source)
+    if kind == "ast_call_with_kwarg":
+        return _detect_ast_call_with_kwarg(rule, file, source)
     if kind == "python":
         fn_id = rule.detect.get("fn") or rule.id
         fn = _PYTHON_DETECTORS.get(fn_id)
@@ -142,7 +145,7 @@ def apply_rule(rule: Rule, file: Path, source: str | None = None) -> list[Diagno
         return fn(rule, file, source)
     raise ValueError(
         f"rule {rule.id}: unknown detect.kind {kind!r}. "
-        f"Supported kinds: comment_regex, source_unicode_category, python."
+        f"Supported kinds: comment_regex, source_unicode_category, ast_call_with_kwarg, python."
     )
 
 
@@ -231,6 +234,123 @@ def _detect_source_unicode_category(
     except tokenize.TokenizeError:
         return []
     return diagnostics
+
+
+def _detect_ast_call_with_kwarg(
+    rule: Rule, file: Path, source: str
+) -> list[Diagnostic]:
+    """Match a libcst Call node by function name (dotted or simple), optionally
+    with a specific keyword argument and value.
+
+    spec keys:
+        function:  required. Dotted name like "subprocess.run" or simple "eval".
+        kwarg:     optional. Name of the keyword argument to match.
+        value:     optional. If present, the kwarg's value must match (literal compare).
+                   When kwarg is given but value is absent, any kwarg presence matches.
+    """
+    import libcst as cst
+    from libcst.metadata import PositionProvider
+
+    spec = rule.detect
+    target_func = spec.get("function", "")
+    target_kwarg = spec.get("kwarg")
+    target_value_present = "value" in spec
+    target_value = spec.get("value")
+
+    if not target_func:
+        return []
+
+    try:
+        module = cst.parse_module(source)
+    except cst.ParserSyntaxError:
+        return []
+
+    wrapper = cst.MetadataWrapper(module)
+    severity = Severity(rule.severity) if rule.severity in {"error", "warning"} else Severity.WARNING
+    category = _category(rule.category)
+    diagnostics: list[Diagnostic] = []
+
+    class _Visitor(cst.CSTVisitor):
+        METADATA_DEPENDENCIES = (PositionProvider,)
+
+        def visit_Call(self, node: cst.Call) -> None:
+            if _func_name(node.func) != target_func:
+                return
+            if target_kwarg is None:
+                _record(node)
+                return
+            for arg in node.args:
+                if arg.keyword is None or arg.keyword.value != target_kwarg:
+                    continue
+                if not target_value_present:
+                    _record(node)
+                    return
+                if _literal_matches(arg.value, target_value):
+                    _record(node)
+                    return
+
+    def _record(node: cst.Call) -> None:
+        pos = wrapper.resolve(PositionProvider)[node]
+        diagnostics.append(
+            Diagnostic(
+                rule_id=rule.id,
+                severity=severity,
+                category=category,
+                file=file,
+                line=pos.start.line,
+                column=pos.start.column,
+                message=rule.message,
+                help=rule.help,
+                url=rule.ref or "",
+            )
+        )
+
+    wrapper.visit(_Visitor())
+    return diagnostics
+
+
+def _func_name(node) -> str:
+    """Render a libcst function expression as a dotted name. Returns '' if too complex."""
+    import libcst as cst
+
+    if isinstance(node, cst.Name):
+        return node.value
+    if isinstance(node, cst.Attribute):
+        prefix = _func_name(node.value)
+        return f"{prefix}.{node.attr.value}" if prefix else ""
+    return ""
+
+
+def _literal_matches(node, expected) -> bool:
+    """Compare a libcst node's literal value to a Python value.
+
+    Supports: True/False/None, int, float, str, list-of-literals.
+    Returns False for non-literal expressions (variables, function calls, etc.).
+    """
+    import libcst as cst
+
+    if isinstance(node, cst.Name):
+        if node.value == "True":
+            return expected is True
+        if node.value == "False":
+            return expected is False
+        if node.value == "None":
+            return expected is None
+        return False
+    if isinstance(node, cst.SimpleString):
+        # Strip quotes — libcst keeps them
+        return node.evaluated_value == expected if isinstance(expected, str) else False
+    if isinstance(node, cst.Integer):
+        return isinstance(expected, int) and not isinstance(expected, bool) and int(node.value) == expected
+    if isinstance(node, cst.Float):
+        return isinstance(expected, float) and float(node.value) == expected
+    if isinstance(node, cst.List):
+        if not isinstance(expected, list):
+            return False
+        if len(node.elements) != len(expected):
+            return False
+        return all(_literal_matches(el.value, ex) for el, ex in zip(node.elements, expected, strict=True))
+    return False
 
 
 def _category(name: str) -> Category:

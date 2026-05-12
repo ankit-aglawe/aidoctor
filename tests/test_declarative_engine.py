@@ -324,6 +324,99 @@ def test_no_emoji_no_diagnostic(tmp_path: Path) -> None:
     assert diags == []
 
 
+def test_ast_call_with_kwarg_catches_shell_true(tmp_path: Path) -> None:
+    """ast_call_with_kwarg: matches `subprocess.run(..., shell=True)` etc.
+
+    This is the workhorse for the OWASP-3 pack (shell=True / verify=False /
+    algorithm='none') and inflated-print's emoji-kwarg case.
+    """
+    from aidoctor.engine.declarative import Rule, apply_rule
+
+    rule = Rule(
+        id="shell-true-with-variable",
+        severity="warning",
+        confidence="HIGH",
+        category="security",
+        langs=("python",),
+        detect={"kind": "ast_call_with_kwarg", "function": "subprocess.run", "kwarg": "shell", "value": True},
+        fix=None,
+        ref=None,
+        message="subprocess.run with shell=True is RCE-prone",
+        help="Use shell=False and pass argv list.",
+    )
+    f = tmp_path / "x.py"
+    f.write_text("import subprocess\nsubprocess.run(cmd, shell=True)\n")
+    diags = apply_rule(rule, f)
+    assert len(diags) == 1
+    assert diags[0].line == 2
+    assert diags[0].rule_id == "shell-true-with-variable"
+
+
+def test_ast_call_with_kwarg_ignores_unmatched_value(tmp_path: Path) -> None:
+    from aidoctor.engine.declarative import Rule, apply_rule
+
+    rule = Rule(
+        id="r", severity="warning", confidence="HIGH", category="security",
+        langs=("python",),
+        detect={"kind": "ast_call_with_kwarg", "function": "subprocess.run", "kwarg": "shell", "value": True},
+        fix=None, ref=None, message="m", help="h",
+    )
+    f = tmp_path / "x.py"
+    f.write_text("subprocess.run(cmd, shell=False)\n")
+    diags = apply_rule(rule, f)
+    assert diags == []
+
+
+def test_ast_call_with_kwarg_ignores_other_function(tmp_path: Path) -> None:
+    from aidoctor.engine.declarative import Rule, apply_rule
+
+    rule = Rule(
+        id="r", severity="warning", confidence="HIGH", category="security",
+        langs=("python",),
+        detect={"kind": "ast_call_with_kwarg", "function": "subprocess.run", "kwarg": "shell", "value": True},
+        fix=None, ref=None, message="m", help="h",
+    )
+    f = tmp_path / "x.py"
+    f.write_text("other.fn(cmd, shell=True)\n")
+    diags = apply_rule(rule, f)
+    assert diags == []
+
+
+def test_ast_call_with_kwarg_simple_function_name(tmp_path: Path) -> None:
+    """Function names without dots (e.g., `eval(x)`)."""
+    from aidoctor.engine.declarative import Rule, apply_rule
+
+    rule = Rule(
+        id="eval-on-non-constant",
+        severity="warning", confidence="HIGH", category="security",
+        langs=("python",),
+        # No kwarg/value — just match the function call shape regardless of args
+        detect={"kind": "ast_call_with_kwarg", "function": "eval"},
+        fix=None, ref=None, message="m", help="h",
+    )
+    f = tmp_path / "x.py"
+    f.write_text("y = eval(user_input)\n")
+    diags = apply_rule(rule, f)
+    assert len(diags) == 1
+
+
+def test_ast_call_with_kwarg_handles_string_value(tmp_path: Path) -> None:
+    """JWT algorithm='none' — string value matching."""
+    from aidoctor.engine.declarative import Rule, apply_rule
+
+    rule = Rule(
+        id="jwt-algorithm-none",
+        severity="warning", confidence="HIGH", category="security",
+        langs=("python",),
+        detect={"kind": "ast_call_with_kwarg", "function": "jwt.decode", "kwarg": "algorithms", "value": ["none"]},
+        fix=None, ref=None, message="m", help="h",
+    )
+    f = tmp_path / "x.py"
+    f.write_text('import jwt\njwt.decode(token, algorithms=["none"])\n')
+    diags = apply_rule(rule, f)
+    assert len(diags) == 1
+
+
 def test_emoji_categories_filter_works(tmp_path: Path) -> None:
     """Only the configured Unicode categories trigger.
 
