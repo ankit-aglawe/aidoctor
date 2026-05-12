@@ -16,7 +16,11 @@ import click
 from rich.console import Console
 
 from aidoctor.discover import NoPythonFilesError
-from aidoctor.install import cli_run as install_cli_run, split_frontmatter
+from aidoctor.install import (
+    cli_run as install_cli_run,
+    install_pre_commit,
+    split_frontmatter,
+)
 from aidoctor.render import render_terminal
 from aidoctor.rules import RULES
 from aidoctor.scan import build_json_payload, compute_exit_code, scan
@@ -180,14 +184,30 @@ def _print_rule_doc(rule_id: str) -> None:
     is_flag=True,
     help="Skip prompts. Install into every detected agent. Use this in CI.",
 )
-def install_cmd(dry_run: bool, force: bool, yes: bool) -> None:
+@click.option(
+    "--pre-commit",
+    "pre_commit",
+    is_flag=True,
+    help="Write or update .pre-commit-config.yaml with the aidoctor hook "
+    "(idempotent). Run from the repo you want hooked.",
+)
+def install_cmd(dry_run: bool, force: bool, yes: bool, pre_commit: bool) -> None:
     """Install the aidoctor skill into your AI agent dirs.
 
     Detects which agents are installed (Claude Code, Cursor, Codex, Gemini CLI,
     OpenCode), prompts you for which to install into, and writes the SKILL files.
     In a TTY: interactive prompts. In CI or with --yes: installs into all detected.
     Existing files are backed up to ~/.cache/aidoctor/install-backups/<timestamp>/.
+
+    With --pre-commit: skip agent installs and just write a .pre-commit-config.yaml
+    hook entry in the current directory.
     """
+    if pre_commit:
+        rc = install_pre_commit(Path.cwd())
+        if rc == 0:
+            click.echo("aidoctor: pre-commit hook configured in .pre-commit-config.yaml")
+            click.echo("Next: `pip install pre-commit && pre-commit install`")
+        sys.exit(rc)
     rc = install_cli_run(dry_run=dry_run, force=force, yes=yes)
     sys.exit(rc)
 
