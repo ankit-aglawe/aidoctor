@@ -19,6 +19,7 @@ import libcst as cst
 # detectors with the declarative engine. Multiprocess workers re-import this
 # module, which re-runs these registrations in each worker process.
 import aidoctor.rules_complex.security  # noqa: F401 - register OWASP detectors
+import aidoctor.rules_complex.security_multilang  # noqa: F401 - per-lang security
 from aidoctor.engine.declarative import Rule, apply_rule, load_manifest
 from aidoctor.rules import RULES, Diagnostic, RuleContext
 
