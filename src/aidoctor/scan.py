@@ -21,6 +21,7 @@ import libcst as cst
 import aidoctor.rules_complex.security  # noqa: F401 - register OWASP detectors
 import aidoctor.rules_complex.security_multilang  # noqa: F401 - per-lang security
 import aidoctor.rules_complex.ai_style  # noqa: F401 - 5 Python ai_style escape-hatch rules
+import aidoctor.rules_complex.python_quality  # noqa: F401 - 13 new Python quality rules
 from aidoctor.engine.declarative import Rule, apply_rule, load_manifest
 from aidoctor.rules import RULES, Diagnostic, RuleContext
 
