@@ -8,25 +8,24 @@ Reproduce: `uv run python evals/real_world_fp/run_fp_test.py`
 
 
 ## requests @ `v2.32.3`
-Files scanned: **18** · Findings: **256** · Unique rules: **8**
+Files scanned: **18** · Findings: **62** · Unique rules: **7**
 
 | Rule | Severity | Occurrences |
 |---|---|---|
-| `missing-return-type` | warning | 172 |
-| `import-without-use` | warning | 67 |
+| `import-without-use` | warning | 32 |
+| `missing-return-type` | warning | 15 |
 | `todo-without-ticket` | warning | 7 |
 | `ai-section-divider` | warning | 4 |
-| `conditional-import-outside-try` | warning | 2 |
 | `nested-loop-append` | warning | 2 |
 | `stub-comment` | error | 1 |
 | `repeated-dict-lookup` | warning | 1 |
 
 ## flask @ `3.0.3`
-Files scanned: **24** · Findings: **47** · Unique rules: **10**
+Files scanned: **24** · Findings: **40** · Unique rules: **10**
 
 | Rule | Severity | Occurrences |
 |---|---|---|
-| `conditional-import-outside-try` | warning | 24 |
+| `conditional-import-outside-try` | warning | 17 |
 | `except-exception-swallowing` | warning | 5 |
 | `duplicate-import` | warning | 4 |
 | `import-without-use` | warning | 4 |
@@ -38,14 +37,13 @@ Files scanned: **24** · Findings: **47** · Unique rules: **10**
 | `nested-loop-append` | warning | 1 |
 
 ## httpx @ `0.27.2`
-Files scanned: **24** · Findings: **64** · Unique rules: **13**
+Files scanned: **24** · Findings: **35** · Unique rules: **12**
 
 | Rule | Severity | Occurrences |
 |---|---|---|
-| `any-everywhere` | warning | 17 |
-| `wildcard-import` | warning | 16 |
 | `conditional-import-outside-try` | warning | 8 |
 | `duplicate-import` | warning | 5 |
+| `any-everywhere` | warning | 4 |
 | `nested-loop-append` | warning | 3 |
 | `except-exception-swallowing` | warning | 3 |
 | `ai-section-divider` | warning | 3 |
@@ -62,17 +60,16 @@ Total files scanned: **66**
 
 | Rule | Total occurrences across repos |
 |---|---|
-| `missing-return-type` | 172 |
-| `import-without-use` | 73 |
-| `conditional-import-outside-try` | 34 |
-| `any-everywhere` | 17 |
-| `wildcard-import` | 16 |
+| `import-without-use` | 38 |
+| `conditional-import-outside-try` | 25 |
+| `missing-return-type` | 15 |
 | `todo-without-ticket` | 10 |
 | `duplicate-import` | 9 |
 | `except-exception-swallowing` | 8 |
 | `ai-section-divider` | 7 |
 | `nested-loop-append` | 6 |
 | `repeated-dict-lookup` | 5 |
+| `any-everywhere` | 4 |
 | `stub-comment` | 2 |
 | `eval-or-exec-on-non-constant` | 2 |
 | `pickle-loads-on-non-constant` | 2 |

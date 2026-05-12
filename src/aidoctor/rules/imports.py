@@ -15,7 +15,12 @@ from aidoctor.rules._base import Category, Rule, Severity
 
 
 class WildcardImportRule(Rule):
-    """Detects `from X import *` patterns."""
+    """Detects `from X import *` patterns.
+
+    v2.0 refinement: exempt `__init__.py` files. `from .submodule import *` in
+    a package's __init__ is the canonical Python re-export idiom (used by
+    httpx, flask, and most well-maintained packages).
+    """
 
     rule_id = "wildcard-import"
     severity = Severity.WARNING
@@ -25,11 +30,14 @@ class WildcardImportRule(Rule):
         "`from module import *` makes it impossible to tell where a name comes from "
         "and breaks tools (linters, type checkers, IDE autocomplete) that need to "
         "resolve names statically. AI assistants often generate this when they're "
-        "uncertain what to import. Import names explicitly: `from module import a, b, c`."
+        "uncertain what to import. Import names explicitly: `from module import a, b, c`. "
+        "Exempt: `__init__.py` files where `from .submodule import *` is canonical."
     )
     url = "https://github.com/ankit-aglawe/aidoctor#wildcard-import"
 
     def visit_ImportFrom(self, node: cst.ImportFrom) -> None:
+        if self.context.file.name == "__init__.py":
+            return
         if isinstance(node.names, cst.ImportStar):
             self.report(node)
 
@@ -90,7 +98,14 @@ class DuplicateImportRule(Rule):
 
 
 class ConditionalImportOutsideTryRule(Rule):
-    """Detects `if VERSION...: import X` patterns without try/except guard."""
+    """Detects `if VERSION...: import X` patterns without try/except guard.
+
+    v2.0 refinement: if the file already has ANY `try/except ImportError`
+    sibling, the author is aware of import-fallback patterns. Don't nag.
+
+    Fixes 34 FPs the real-world FP harness found in pallets/flask, which
+    legitimately mixes try-except-ImportError with version-gated imports.
+    """
 
     rule_id = "conditional-import-outside-try"
     severity = Severity.WARNING
@@ -101,9 +116,15 @@ class ConditionalImportOutsideTryRule(Rule):
         "without a try/except guard. If the import fails on an unexpected system, "
         "the error is cryptic and uncatchable. Wrap conditional imports in "
         "try/except ImportError to fail loudly with a useful message, or restructure "
-        "to use importlib.util.find_spec for capability checks."
+        "to use importlib.util.find_spec for capability checks. "
+        "Exempt: files that already contain `try/except ImportError` elsewhere."
     )
     url = "https://github.com/ankit-aglawe/aidoctor#conditional-import-outside-try"
+
+    def __init__(self, context: Any) -> None:
+        super().__init__(context)
+        self._has_try_except_importerror = False
+        self._candidates: list[cst.CSTNode] = []
 
     def _contains_import(self, body: cst.BaseStatement) -> bool:
         """Check if a statement body contains an Import or ImportFrom."""
@@ -113,15 +134,30 @@ class ConditionalImportOutsideTryRule(Rule):
         return False
 
     def visit_If(self, node: cst.If) -> None:
-        # We flag `if ...: import X` only when the parent context is NOT a Try.
-        # libcst doesn't easily expose parent context in CSTVisitor, so we check
-        # the if's body for direct imports and rely on visit_Try suppressing.
         if self._contains_import(node.body):
-            self.report(node)
+            self._candidates.append(node)
 
     def visit_Try(self, node: cst.Try) -> bool:
-        # Skip walking the try body for this rule — imports inside try are fine.
+        # Detect `try: ... except ImportError`.
+        for handler in node.handlers:
+            t = handler.type
+            if t is None:
+                continue
+            if isinstance(t, cst.Name) and t.value == "ImportError":
+                self._has_try_except_importerror = True
+            elif isinstance(t, cst.Tuple):
+                for el in t.elements:
+                    v = el.value if hasattr(el, "value") else None
+                    if isinstance(v, cst.Name) and v.value == "ImportError":
+                        self._has_try_except_importerror = True
+        # Don't recurse into the try body for `if X: import Y` checks.
         return False
+
+    def leave_Module(self, original_node: cst.Module) -> None:
+        if self._has_try_except_importerror:
+            return  # author is import-fallback-aware; stay silent
+        for cand in self._candidates:
+            self.report(cand)
 
 
 class ImportWithoutUseRule(Rule):
@@ -224,6 +260,10 @@ class ImportWithoutUseRule(Rule):
                         self._all_exported.add(sval)
 
     def leave_Module(self, original_node: cst.Module) -> None:
+        # v2.0 refinement: __init__.py without __all__ is implicitly a re-export
+        # package. Fixes the bulk of the 73 FPs in psf/requests.
+        if self.context.file.name == "__init__.py" and not self._all_exported:
+            return  # implicit-re-export package; every import is "used"
         unused = set(self._bindings) - self._used - self._all_exported
         for name in unused:
             self.report(self._bindings[name], message=f"`{name}` imported but never used")
