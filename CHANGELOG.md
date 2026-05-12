@@ -2,13 +2,33 @@
 
 All notable changes to AIDoctor are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). The project follows [Semantic Versioning](https://semver.org/).
 
-## [2.0.0] — 2026-05-12
+## [2.0.0] — 2026-05-12 — BREAKING CHANGES + MULTI-LANGUAGE SCANNER
 
-### The moat ships: `/aidoctor:deai` finds and removes AI fingerprints
+### Multi-language deterministic scanner ships at v2.0
 
-v2.0 reframes aidoctor from "Python AI-slop linter" to **the coding harness with a deterministic verifier under it**. The new headline skill `/aidoctor:deai` detects the *visible* AI tells — NOTE/IMPORTANT emphasis labels, ASCII section dividers, hedge leakage, self-praise vocabulary, emojis in source code — and proposes deterministic fixes for each.
+aidoctor v2.0 ships the **first deterministic AI-slop scanner that walks 5 languages**: Python (libcst), Rust (tree-sitter), Go (tree-sitter), JavaScript (tree-sitter), and TypeScript including JSX/TSX (tree-sitter). The same rule fires across all 5 languages when applicable; per-language rules (Rust unsafe, Go SQL injection, React danger HTML) detect language-specific patterns via tree-sitter.
 
-Three calibration bugs flagged by 8-persona evaluation are fixed: score caps, --fail-on default, and JSON streaming.
+### The moat: `/aidoctor:deai`
+
+v2.0 reframes aidoctor from "Python AI-slop linter" to **the coding harness with a deterministic verifier under it**. The headline skill `/aidoctor:deai` detects the *visible* AI tells across any supported language and proposes deterministic fixes.
+
+### Breaking changes vs v1.x
+
+1. **`aidoctor scan` walks ALL supported source files by default**, not just `.py`. Scanning `src/` now picks up `.rs`/`.go`/`.js`/`.ts`/`.jsx`/`.tsx` files too. Pass explicit paths if you need narrower scope.
+2. **`--fail-on=error` is the default** (was `--fail-on=none`). CI integrations now exit non-zero on errors out of the box. Pass `--fail-on=none` to preserve v1.x silent-pass behavior.
+3. **Score formula caps**: any `error`-severity rule caps the score at 69 ("Needs work"). New `critical` severity caps at 39. Previously a file with hardcoded API keys could score 88 "Great" — fixed.
+4. **`NoPythonFilesError` error message** changed from "No Python files found in: PATH" to "No go/javascript/python/rust/typescript source files found in: PATH" (still raised as `NoPythonFilesError` for compatibility).
+5. **Pre-commit hook rev pin**: update your `.pre-commit-config.yaml` to `rev: v2.0.0`. Run `aidoctor install --pre-commit` to refresh automatically (idempotent).
+6. **3 rules dropped** as confirmed false positives via real-world testing:
+   - `python:generic-without-typevar` (LOW yield per HONESTY_AUDIT)
+   - `js:default-export-mixed` (Next.js requires default export — 100% FP on Next.js apps)
+   - `js:magic-string-import-path` (project-specific, not an AI reflex)
+7. **5 rules refined** to reduce known FPs (367 → 137 findings on requests/flask/httpx, -63%):
+   - `python:missing-return-type` only fires on typing-aware files now
+   - `python:any-everywhere` only fires when ALL annotations are `Any`
+   - `python:import-without-use` respects `__all__` re-exports + `__init__.py` patterns
+   - `python:conditional-import-outside-try` exempts files with sibling `try/except ImportError`
+   - `python:wildcard-import` exempts `__init__.py` files
 
 ### Added
 

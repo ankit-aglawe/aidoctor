@@ -204,6 +204,19 @@ def doctor_cmd(json_output: bool) -> None:
 
     py = f"{_sys.version_info.major}.{_sys.version_info.minor}.{_sys.version_info.micro}"
 
+    # v2.0 migration helper: warn if local .pre-commit-config.yaml pins a v0.x or v1.x rev.
+    precommit_warning: str | None = None
+    cfg = Path.cwd() / ".pre-commit-config.yaml"
+    if cfg.exists():
+        content = cfg.read_text(encoding="utf-8", errors="replace")
+        import re
+        m = re.search(r"ankit-aglawe/aidoctor[\s\S]*?rev:\s*['\"]?(v?(\d+)\.\d+\.\d+)", content)
+        if m and m.group(2) and int(m.group(2)) < 2:
+            precommit_warning = (
+                f"WARNING: .pre-commit-config.yaml pins aidoctor at {m.group(1)} — "
+                f"incompatible with v2.0. Run `aidoctor install --pre-commit` to update."
+            )
+
     if json_output:
         payload = {
             "aidoctor_version": aidoctor.__version__,
@@ -213,6 +226,8 @@ def doctor_cmd(json_output: bool) -> None:
             "manifests": manifests,
             "total_rules": total,
         }
+        if precommit_warning:
+            payload["precommit_warning"] = precommit_warning
         click.echo(json.dumps(payload, indent=2))
         sys.exit(0)
 
@@ -227,6 +242,9 @@ def doctor_cmd(json_output: bool) -> None:
         marker = "ok " if m["rule_count"] >= 0 else "ERR"
         click.echo(f"  {marker}  {m['name']:24s}  {m['rule_count']:>3} rules")
     click.echo(f"total rules: {total}")
+    if precommit_warning:
+        click.echo()
+        click.echo(precommit_warning)
     sys.exit(0)
 
 
