@@ -25,7 +25,9 @@ from collections import defaultdict
 from pathlib import Path
 
 # Pinned to specific tags/commits for reproducibility. Bump when re-running.
+# v2.0: covers all 5 supported languages.
 TARGETS = [
+    # Python — mature pre-AI codebases
     {
         "name": "requests",
         "url": "https://github.com/psf/requests.git",
@@ -43,6 +45,27 @@ TARGETS = [
         "url": "https://github.com/encode/httpx.git",
         "commit": "0.27.2",
         "scan_path": "httpx",
+    },
+    # Rust
+    {
+        "name": "ripgrep",
+        "url": "https://github.com/BurntSushi/ripgrep.git",
+        "commit": "14.1.1",
+        "scan_path": "crates/core",
+    },
+    # Go
+    {
+        "name": "cobra",
+        "url": "https://github.com/spf13/cobra.git",
+        "commit": "v1.8.1",
+        "scan_path": ".",
+    },
+    # JavaScript
+    {
+        "name": "express",
+        "url": "https://github.com/expressjs/express.git",
+        "commit": "4.19.2",
+        "scan_path": "lib",
     },
 ]
 
@@ -91,8 +114,9 @@ def scan(path: Path) -> tuple[int, dict[str, list[dict]]]:
 
 def main() -> None:
     lines = [
-        "# Real-world false-positive test report\n",
-        "Per-rule occurrence count on well-maintained pre-AI Python codebases.",
+        "# Real-world false-positive test report (v2.0, multi-language)\n",
+        "Per-rule occurrence count on well-maintained pre-AI codebases across",
+        "all 5 supported languages (Python, Rust, Go, JavaScript, TypeScript).",
         "Any rule with >0 hits across these is producing **false positives**",
         "unless we can manually justify each occurrence as a real AI fingerprint.\n",
         "Reproduce: `uv run python evals/real_world_fp/run_fp_test.py`\n",

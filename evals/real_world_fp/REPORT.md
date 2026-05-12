@@ -1,6 +1,7 @@
-# Real-world false-positive test report
+# Real-world false-positive test report (v2.0, multi-language)
 
-Per-rule occurrence count on well-maintained pre-AI Python codebases.
+Per-rule occurrence count on well-maintained pre-AI codebases across
+all 5 supported languages (Python, Rust, Go, JavaScript, TypeScript).
 Any rule with >0 hits across these is producing **false positives**
 unless we can manually justify each occurrence as a real AI fingerprint.
 
@@ -37,7 +38,7 @@ Files scanned: **24** · Findings: **40** · Unique rules: **10**
 | `nested-loop-append` | warning | 1 |
 
 ## httpx @ `0.27.2`
-Files scanned: **24** · Findings: **35** · Unique rules: **12**
+Files scanned: **24** · Findings: **36** · Unique rules: **13**
 
 | Rule | Severity | Occurrences |
 |---|---|---|
@@ -53,10 +54,36 @@ Files scanned: **24** · Findings: **35** · Unique rules: **12**
 | `stub-comment` | error | 1 |
 | `todo-without-ticket` | warning | 1 |
 | `ai-emphasis-label` | warning | 1 |
+| `ai-rule-of-three-padding` | warning | 1 |
+
+## ripgrep @ `14.1.1`
+Files scanned: **20** · Findings: **3** · Unique rules: **2**
+
+| Rule | Severity | Occurrences |
+|---|---|---|
+| `ai-conjunctive-opener` | warning | 2 |
+| `rust-unsafe-without-safety-comment` | warning | 1 |
+
+## cobra @ `v1.8.1`
+Files scanned: **36** · Findings: **7** · Unique rules: **4**
+
+| Rule | Severity | Occurrences |
+|---|---|---|
+| `ai-todo-without-ticket-multilang` | warning | 4 |
+| `ai-section-divider` | warning | 1 |
+| `ai-emphasis-label` | warning | 1 |
+| `ai-rule-of-three-padding` | warning | 1 |
+
+## express @ `4.19.2`
+Files scanned: **11** · Findings: **1** · Unique rules: **1**
+
+| Rule | Severity | Occurrences |
+|---|---|---|
+| `ai-todo-without-ticket-multilang` | warning | 1 |
 
 ## Aggregate across all repos
 
-Total files scanned: **66**
+Total files scanned: **133**
 
 | Rule | Total occurrences across repos |
 |---|---|
@@ -65,14 +92,18 @@ Total files scanned: **66**
 | `missing-return-type` | 15 |
 | `todo-without-ticket` | 10 |
 | `duplicate-import` | 9 |
+| `ai-section-divider` | 8 |
 | `except-exception-swallowing` | 8 |
-| `ai-section-divider` | 7 |
 | `nested-loop-append` | 6 |
 | `repeated-dict-lookup` | 5 |
+| `ai-todo-without-ticket-multilang` | 5 |
 | `any-everywhere` | 4 |
 | `stub-comment` | 2 |
 | `eval-or-exec-on-non-constant` | 2 |
 | `pickle-loads-on-non-constant` | 2 |
 | `str-concat-in-loop` | 2 |
+| `ai-emphasis-label` | 2 |
+| `ai-rule-of-three-padding` | 2 |
+| `ai-conjunctive-opener` | 2 |
 | `bare-except-pass` | 1 |
-| `ai-emphasis-label` | 1 |
+| `rust-unsafe-without-safety-comment` | 1 |
