@@ -19,30 +19,39 @@ Print the catalog and a decision tree. This is the explicit entry point — user
 Print this exactly (in plain Markdown):
 
 ```
-aidoctor — 4 skills + 1 CLI, for Python that AI agents tend to write badly.
+aidoctor — the coding harness that catches what your AI agent writes badly.
 
-WHAT YOU WANT                       WHAT TO INVOKE
+THE MOAT
+─────────────────────────────────── ────────────────────────────────────
+Remove visible AI fingerprints      /aidoctor:deai          (headline)
+   (NOTE labels, emojis in code,
+    section dividers, self-praise,
+    hedge leakage)
+
+EVERYTHING ELSE
 ─────────────────────────────────── ────────────────────────────────────
 Write Python (no action needed)     python-rules auto-loads
 Review your last changed code       /aidoctor:simplify
 One-file or one-path lint check     /aidoctor:scan
 Whole-project deep audit            /aidoctor:audit
-Browse all 25 rules                 /aidoctor:rules
+Browse rules                        /aidoctor:rules
+Set up pre-commit hook              aidoctor install --pre-commit
 Explain one rule                    aidoctor scan --explain <rule-id>
 CI / pre-commit lint                aidoctor scan . in your pipeline
 
 NATURAL LANGUAGE ALSO WORKS
 ─────────────────────────────────── ────────────────────────────────────
-"audit this repo"                   triggers /aidoctor:audit
-"simplify what I just changed"      triggers /aidoctor:simplify
-"scan this"                         triggers /aidoctor:scan
-"list aidoctor rules"               triggers /aidoctor:rules
+"deai this file" / "remove AI tells"  triggers /aidoctor:deai
+"audit this repo"                     triggers /aidoctor:audit
+"simplify what I just changed"        triggers /aidoctor:simplify
+"scan this"                           triggers /aidoctor:scan
 
 FIRST-TIME USE
 ─────────────────────────────────── ────────────────────────────────────
-1. Say "audit this repo" to get a six-dimensional review.
-2. Pick "fix tier 1 only" when prompted.
-3. Re-audit. Watch the score move.
+1. Say "deai this file" on any AI-generated Python — watch the
+   NOTE labels, emojis, and section dividers disappear.
+2. Say "audit this repo" for the full six-dimensional review.
+3. Say "install pre-commit" to wire aidoctor into your git workflow.
 ```
 
 Then stop. Do not offer to run any of them. The user picks next.
