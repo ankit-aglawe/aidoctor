@@ -167,6 +167,69 @@ def _print_rule_doc(rule_id: str) -> None:
     sys.exit(EXIT_USAGE)
 
 
+@main.command(name="doctor")
+@click.option(
+    "--json",
+    "json_output",
+    is_flag=True,
+    help="Emit JSON instead of human-readable output.",
+)
+def doctor_cmd(json_output: bool) -> None:
+    """Diagnostics report — paste this when filing a bug.
+
+    Prints aidoctor + Python versions, loaded JSONL manifests with rule counts,
+    and total rule count. Use this to sanity-check an upgrade or confirm the
+    rule packs you think are installed actually are.
+    """
+    import platform
+    import sys as _sys
+
+    import aidoctor
+    from aidoctor.engine.declarative import load_manifest
+    from aidoctor.rules import RULES
+
+    manifests_dir = Path(aidoctor.__file__).parent / "rules" / "manifest"
+    manifests: list[dict] = []
+    if manifests_dir.exists():
+        for jsonl in sorted(manifests_dir.glob("*.jsonl")):
+            try:
+                rules = load_manifest(jsonl)
+                manifests.append({"name": jsonl.name, "rule_count": len(rules)})
+            except (FileNotFoundError, OSError):
+                manifests.append({"name": jsonl.name, "rule_count": -1})
+
+    legacy_count = len(RULES)
+    manifest_count = sum(m["rule_count"] for m in manifests if m["rule_count"] >= 0)
+    total = legacy_count + manifest_count
+
+    py = f"{_sys.version_info.major}.{_sys.version_info.minor}.{_sys.version_info.micro}"
+
+    if json_output:
+        payload = {
+            "aidoctor_version": aidoctor.__version__,
+            "python_version": py,
+            "platform": platform.platform(),
+            "legacy_rules": legacy_count,
+            "manifests": manifests,
+            "total_rules": total,
+        }
+        click.echo(json.dumps(payload, indent=2))
+        sys.exit(0)
+
+    click.echo(f"aidoctor:  {aidoctor.__version__}")
+    click.echo(f"python:    {py}")
+    click.echo(f"platform:  {platform.platform()}")
+    click.echo(f"legacy rules (libcst): {legacy_count}")
+    click.echo("manifests:")
+    if not manifests:
+        click.echo("  (none loaded)")
+    for m in manifests:
+        marker = "ok " if m["rule_count"] >= 0 else "ERR"
+        click.echo(f"  {marker}  {m['name']:24s}  {m['rule_count']:>3} rules")
+    click.echo(f"total rules: {total}")
+    sys.exit(0)
+
+
 @main.command(name="deai")
 @click.argument("path", nargs=-1, type=click.Path(exists=True, path_type=Path))
 @click.option(
