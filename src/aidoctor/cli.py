@@ -34,7 +34,7 @@ EXIT_NO_FILES = 2
 @click.group()
 @click.version_option()
 def main() -> None:
-    """aidoctor — your agent writes bad Python. This catches it."""
+    """aidoctor — the coding harness that removes AI fingerprints from your code."""
 
 
 @main.command(name="scan")

@@ -1,7 +1,7 @@
 {
   "name": "aidoctor",
-  "version": "1.1.0",
-  "description": "AIDoctor — the multi-language coding harness for AI agents. 11 skills orchestrate AI-slop review across any code: write-time prevention, diff review, whole-project audit. v1.1 ships deep rule packs for Python (25), React (19), Rust (22), JavaScript/TypeScript (21), and Go (20) — 107 rules across 5 languages. LLM-only fallback for any other language. Same harness in Claude Code, Cursor, Codex, Gemini CLI, OpenCode.",
+  "version": "2.0.0",
+  "description": "AIDoctor — the coding harness that removes AI fingerprints from your code. v2.0 ships `/aidoctor:deai` as the headline moat skill: detects the visible AI tells (NOTE/IMPORTANT labels, ASCII section dividers, hedge leakage, self-praise vocabulary, emojis in source) and proposes deterministic fixes. Plus calibrated scoring (errors cap at 69, criticals at 39), `--fail-on=error` default so CI works out of the box, JSONL streaming for jq/grep pipelines, and one-command pre-commit setup. 33 Python rules across 10 categories. Skill packs for Rust/Go/JS/TS/React steer agents at generation time today; tree-sitter scanning for those languages lands in v2.1.",
   "author": {
     "name": "Ankit Aglawe",
     "email": "aglawe.ankit@gmail.com"
