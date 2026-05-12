@@ -15,6 +15,7 @@ from libcst.metadata import PositionProvider
 
 
 class Severity(str, enum.Enum):
+    CRITICAL = "critical"
     ERROR = "error"
     WARNING = "warning"
 
