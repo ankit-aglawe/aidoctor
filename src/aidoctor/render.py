@@ -77,6 +77,8 @@ CATEGORY_COLORS: dict[Category, str] = {
     Category.LOOPS: "bright_yellow",
     Category.PERF: "bright_green",
     Category.DECAY: "bright_white",
+    Category.AI_STYLE: "bright_cyan",
+    Category.SECURITY: "bright_red",
 }
 
 def score_color(score: Score) -> str:

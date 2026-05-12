@@ -28,6 +28,8 @@ class Category(str, enum.Enum):
     LOOPS = "loops"
     PERF = "perf"
     DECAY = "decay"
+    AI_STYLE = "ai-style"
+    SECURITY = "security"
 
 
 CATEGORY_LABELS: dict[Category, str] = {
@@ -39,6 +41,8 @@ CATEGORY_LABELS: dict[Category, str] = {
     Category.LOOPS: "Stale Loop Patterns",
     Category.PERF: "N+1 / Performance",
     Category.DECAY: "Comment-Driven Decay",
+    Category.AI_STYLE: "AI Style Fingerprints",
+    Category.SECURITY: "Security",
 }
 
 
